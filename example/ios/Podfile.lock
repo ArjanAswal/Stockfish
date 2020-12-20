@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - stockfish (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - stockfish (from `.symlinks/plugins/stockfish/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  stockfish:
+    :path: ".symlinks/plugins/stockfish/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
+  stockfish: b1b711b7be01e92d8f68ae36d9f88851d3261b7b
+
+PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
+
+COCOAPODS: 1.9.3
