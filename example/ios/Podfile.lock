@@ -1,21 +1,27 @@
 PODS:
   - Flutter (1.0.0)
+  - integration_test (0.0.1):
+    - Flutter
   - stockfish (0.0.1):
     - Flutter
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
+  - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - stockfish (from `.symlinks/plugins/stockfish/ios`)
 
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
+  integration_test:
+    :path: ".symlinks/plugins/integration_test/ios"
   stockfish:
     :path: ".symlinks/plugins/stockfish/ios"
 
 SPEC CHECKSUMS:
   Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
-  stockfish: b1b711b7be01e92d8f68ae36d9f88851d3261b7b
+  integration_test: 5ed24a436eb7ec17b6a13046e9bf7ca4a404e59e
+  stockfish: f57f9bd22952c2572a4f5a4e25cbe3e5c735f467
 
 PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
 

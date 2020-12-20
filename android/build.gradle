@@ -26,8 +26,18 @@ android {
 
     defaultConfig {
         minSdkVersion 16
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17"
+            }
+        }
     }
     lintOptions {
         disable 'InvalidPackage'
+    }
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
     }
 }
