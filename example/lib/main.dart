@@ -1,7 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:stockfish/stockfish.dart';
+
+import 'src/output_widget.dart';
 
 void main() {
   runApp(MyApp());
@@ -61,12 +61,8 @@ class MyApp extends StatelessWidget {
                   )
                   .toList(growable: false),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: StreamBuilder<String>(
-                builder: (_, snapshot) => Text(snapshot.data?.toString() ?? ''),
-                stream: stockfish.stdout,
-              ),
+            const Expanded(
+              child: OutputWidget(),
             ),
           ],
         ),
