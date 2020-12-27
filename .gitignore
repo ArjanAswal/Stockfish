@@ -6,3 +6,7 @@
 
 .cxx/
 build/
+
+.depend
+*.nnue
+Makefile

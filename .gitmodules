@@ -1,3 +1,0 @@
-[submodule "ios/Stockfish"]
-	path = ios/Stockfish
-	url = https://github.com/official-stockfish/Stockfish.git

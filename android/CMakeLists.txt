@@ -8,8 +8,4 @@ add_library(
   ${cppPaths}
 )
 
-file(GLOB nnuePaths "../ios/Stockfish/src/*.nnue")
-foreach(nnuePath ${nnuePaths})
-  get_filename_component(nnueName ${nnuePath} NAME)
-  configure_file(${nnuePath} ${nnueName} COPYONLY)
-endforeach()
+file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-82215d0fd0df.nnue ${CMAKE_BINARY_DIR}/nn-82215d0fd0df.nnue)
