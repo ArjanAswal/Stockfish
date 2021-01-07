@@ -1,17 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:stockfish/stockfish.dart';
 
 class OutputWidget extends StatefulWidget {
-  const OutputWidget({Key key}) : super(key: key);
+  final Stream<String> stdout;
+
+  const OutputWidget(this.stdout, {Key key}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _OutputState();
 }
 
 class _OutputState extends State<OutputWidget> {
-  final stockfish = Stockfish.instance;
   final items = <_OutputItem>[];
 
   StreamSubscription subscription;
@@ -19,8 +19,34 @@ class _OutputState extends State<OutputWidget> {
   @override
   void initState() {
     super.initState();
+    _subscribe();
+  }
 
-    subscription = stockfish.stdout.listen((line) {
+  @override
+  void didUpdateWidget(OutputWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.stdout != oldWidget.stdout) {
+      subscription?.cancel();
+      _subscribe();
+    }
+  }
+
+  @override
+  void dispose() {
+    subscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemBuilder: _buildItem,
+      itemCount: items.length,
+    );
+  }
+
+  void _subscribe() {
+    subscription = widget.stdout.listen((line) {
       if (line.startsWith('info')) {
         if (items.isNotEmpty && items.first.infoCount != null) {
           items.first.infoCount.value++;
@@ -32,20 +58,6 @@ class _OutputState extends State<OutputWidget> {
       }
       setState(() {});
     });
-  }
-
-  @override
-  void dispose() {
-    subscription.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      itemBuilder: _buildItem,
-      itemCount: items.length,
-    );
   }
 
   Widget _buildItem(BuildContext context, int index) {

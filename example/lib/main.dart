@@ -7,8 +7,19 @@ void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  final stockfish = Stockfish.instance;
+class MyApp extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() => _AppState();
+}
+
+class _AppState extends State<MyApp> {
+  Stockfish stockfish;
+
+  @override
+  void initState() {
+    super.initState();
+    stockfish = Stockfish();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +42,22 @@ class MyApp extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
+              child: AnimatedBuilder(
+                animation: stockfish.state,
+                builder: (_, __) => ElevatedButton(
+                  onPressed: stockfish.state.value == StockfishState.disposed
+                      ? () {
+                          final newInstance = Stockfish();
+                          if (newInstance == null) return;
+                          setState(() => stockfish = newInstance);
+                        }
+                      : null,
+                  child: Text('Reset Stockfish instance'),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
               child: TextField(
                 autocorrect: false,
                 decoration: InputDecoration(
@@ -48,7 +75,7 @@ class MyApp extends StatelessWidget {
                 'go infinite',
                 'go movetime 3000',
                 'stop',
-                'ucinewgame',
+                'quit',
               ]
                   .map(
                     (command) => Padding(
@@ -61,8 +88,8 @@ class MyApp extends StatelessWidget {
                   )
                   .toList(growable: false),
             ),
-            const Expanded(
-              child: OutputWidget(),
+            Expanded(
+              child: OutputWidget(stockfish.stdout),
             ),
           ],
         ),

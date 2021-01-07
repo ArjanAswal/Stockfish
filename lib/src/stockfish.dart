@@ -33,9 +33,23 @@ class Stockfish {
           ._setValue(success ? StockfishState.ready : StockfishState.error),
       onError: (error) {
         debugPrint('[stockfish] The init isolate encountered an error $error');
-        _dispose(1, newState: StockfishState.error);
+        _dispose(1);
       },
     );
+  }
+
+  static Stockfish _instance;
+
+  factory Stockfish() {
+    if (_instance != null) {
+      // only one instance can be used at a time
+      // owner must issue `quit` command to dispose it before
+      // a new instance can be created
+      return null;
+    }
+
+    _instance = Stockfish._();
+    return _instance;
   }
 
   ValueListenable<StockfishState> get state => _state;
@@ -48,23 +62,20 @@ class Stockfish {
     free(pointer);
   }
 
-  void _dispose(
-    int exitCode, {
-    StockfishState newState = StockfishState.disposed,
-  }) {
+  void _dispose(int exitCode) {
     _stdoutController.close();
 
     _mainSubscription?.cancel();
     _stdoutSubscription?.cancel();
 
-    _state._setValue(newState);
+    _state._setValue(
+        exitCode == 0 ? StockfishState.disposed : StockfishState.error);
 
-    debugPrint('[stockfish] exitCode=$exitCode');
+    _instance = null;
   }
-
-  static Stockfish _instance;
-  static Stockfish get instance => _instance ??= Stockfish._();
 }
+
+const _quitok = 'quitok';
 
 class _StockfishState extends ChangeNotifier
     implements ValueListenable<StockfishState> {
@@ -83,6 +94,8 @@ class _StockfishState extends ChangeNotifier
 void _isolateMain(SendPort mainPort) {
   final exitCode = nativeMain();
   mainPort.send(exitCode);
+
+  debugPrint('[stockfish] nativeMain exitCode=$exitCode');
 }
 
 void _isolateStdout(SendPort stdoutPort) {
@@ -91,15 +104,21 @@ void _isolateStdout(SendPort stdoutPort) {
   while (true) {
     final pointer = nativeStdoutRead();
 
-    if (pointer != null) {
-      final data = previous + Utf8.fromUtf8(pointer);
-      final lines = data.split('\n');
-      previous = lines.removeLast();
-      for (final line in lines) {
-        stdoutPort.send(line);
+    if (pointer == null) {
+      debugPrint('[stockfish] nativeStdoutRead pointer=null');
+      return;
+    }
+
+    final data = previous + Utf8.fromUtf8(pointer);
+    final lines = data.split('\n');
+    previous = lines.removeLast();
+    for (final line in lines) {
+      stdoutPort.send(line);
+
+      if (line == _quitok) {
+        debugPrint('[stockfish] nativeStdoutRead line=$line');
+        return;
       }
-    } else {
-      break;
     }
   }
 }

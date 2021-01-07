@@ -1,5 +1,6 @@
-#include <unistd.h>
+#include <iostream>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "../Stockfish/src/bitboard.h"
 #include "../Stockfish/src/endgame.h"
@@ -44,6 +45,8 @@ int stockfish_main()
   int argc = 1;
   char *argv[] = {""};
   int exitCode = main(argc, argv);
+
+  std::cout << "quitok" << std::endl; 
 
   return exitCode;
 }
