@@ -112,7 +112,7 @@ class Stockfish {
   }
 
   static Stockfish _instance;
-  static Stockfish get instance => _instance ?? Stockfish._();
+  static Stockfish get instance => _instance ??= Stockfish._();
 }
 
 enum StockfishState {
