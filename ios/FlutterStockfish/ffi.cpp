@@ -26,6 +26,7 @@
 
 int main(int, char **);
 
+const char *QUITOK = "quitok\n";
 int pipes[NUM_PIPES][2];
 char buffer[80];
 
@@ -46,7 +47,7 @@ int stockfish_main()
   char *argv[] = {""};
   int exitCode = main(argc, argv);
 
-  std::cout << "quitok" << std::endl; 
+  std::cout << QUITOK << std::flush;
 
   return exitCode;
 }
@@ -65,5 +66,10 @@ char *stockfish_stdout_read()
   }
 
   buffer[count] = 0;
+  if (strcmp(buffer, QUITOK) == 0)
+  {
+    return NULL;
+  }
+
   return buffer;
 }

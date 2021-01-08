@@ -17,10 +17,8 @@ class Stockfish {
   StreamSubscription _stdoutSubscription;
 
   Stockfish._() {
-    _mainSubscription = _mainPort.listen((message) {
-      debugPrint('[stockfish] The main isolate sent $message');
-      _dispose(message is int ? message : 1);
-    });
+    _mainSubscription =
+        _mainPort.listen((message) => _cleanUp(message is int ? message : 1));
     _stdoutSubscription = _stdoutPort.listen((message) {
       if (message is String) {
         _stdoutController.sink.add(message);
@@ -33,7 +31,7 @@ class Stockfish {
           ._setValue(success ? StockfishState.ready : StockfishState.error),
       onError: (error) {
         debugPrint('[stockfish] The init isolate encountered an error $error');
-        _dispose(1);
+        _cleanUp(1);
       },
     );
   }
@@ -57,12 +55,17 @@ class Stockfish {
   Stream<String> get stdout => _stdoutController.stream;
 
   set stdin(String line) {
+    final stateValue = _state.value;
+    if (stateValue != StockfishState.ready) {
+      throw StateError('Stockfish is not ready ($stateValue)');
+    }
+
     final pointer = Utf8.toUtf8('$line\n');
     nativeStdinWrite(pointer);
     free(pointer);
   }
 
-  void _dispose(int exitCode) {
+  void _cleanUp(int exitCode) {
     _stdoutController.close();
 
     _mainSubscription?.cancel();
@@ -74,8 +77,6 @@ class Stockfish {
     _instance = null;
   }
 }
-
-const _quitok = 'quitok';
 
 class _StockfishState extends ChangeNotifier
     implements ValueListenable<StockfishState> {
@@ -95,7 +96,7 @@ void _isolateMain(SendPort mainPort) {
   final exitCode = nativeMain();
   mainPort.send(exitCode);
 
-  debugPrint('[stockfish] nativeMain exitCode=$exitCode');
+  debugPrint('[stockfish] nativeMain returns $exitCode');
 }
 
 void _isolateStdout(SendPort stdoutPort) {
@@ -104,8 +105,8 @@ void _isolateStdout(SendPort stdoutPort) {
   while (true) {
     final pointer = nativeStdoutRead();
 
-    if (pointer == null) {
-      debugPrint('[stockfish] nativeStdoutRead pointer=null');
+    if (pointer.address == 0) {
+      debugPrint('[stockfish] nativeStdoutRead returns NULL');
       return;
     }
 
@@ -114,11 +115,6 @@ void _isolateStdout(SendPort stdoutPort) {
     previous = lines.removeLast();
     for (final line in lines) {
       stdoutPort.send(line);
-
-      if (line == _quitok) {
-        debugPrint('[stockfish] nativeStdoutRead line=$line');
-        return;
-      }
     }
   }
 }
