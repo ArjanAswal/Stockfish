@@ -65,6 +65,10 @@ class Stockfish {
     free(pointer);
   }
 
+  void dispose() {
+    stdin = 'quit';
+  }
+
   void _cleanUp(int exitCode) {
     _stdoutController.close();
 
