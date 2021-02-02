@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'ffi.dart';
 import 'stockfish_state.dart';
 
+/// A wrapper for C++ engine.
 class Stockfish {
   final _state = _StockfishState();
   final _stdinPending = <String>[];
@@ -41,6 +42,7 @@ class Stockfish {
 
   static Stockfish _instance;
 
+  /// Creates a C++ engine.
   factory Stockfish({List<String> stdin}) {
     if (_instance != null) {
       // only one instance can be used at a time
@@ -55,10 +57,13 @@ class Stockfish {
     return _instance;
   }
 
+  /// The current state of the underlying C++ engine.
   ValueListenable<StockfishState> get state => _state;
 
+  /// The standard output stream.
   Stream<String> get stdout => _stdoutController.stream;
 
+  /// The standard input sink.
   set stdin(String line) {
     final stateValue = _state.value;
     if (stateValue == StockfishState.starting) {
@@ -73,6 +78,7 @@ class Stockfish {
     free(pointer);
   }
 
+  /// Stops the C++ engine.
   void dispose() {
     stdin = 'quit';
   }
