@@ -10,7 +10,6 @@ import 'stockfish_state.dart';
 /// A wrapper for C++ engine.
 class Stockfish {
   final _state = _StockfishState();
-  final _stdinPending = <String>[];
   final _stdoutController = StreamController<String>.broadcast();
   final _mainPort = ReceivePort();
   final _stdoutPort = ReceivePort();
@@ -19,8 +18,6 @@ class Stockfish {
   StreamSubscription _stdoutSubscription;
 
   Stockfish._() {
-    _state.addListener(_onReady);
-
     _mainSubscription =
         _mainPort.listen((message) => _cleanUp(message is int ? message : 1));
     _stdoutSubscription = _stdoutPort.listen((message) {
@@ -43,7 +40,7 @@ class Stockfish {
   static Stockfish _instance;
 
   /// Creates a C++ engine.
-  factory Stockfish({List<String> stdin}) {
+  factory Stockfish() {
     if (_instance != null) {
       // only one instance can be used at a time
       // owner must issue `quit` command to dispose it before
@@ -52,8 +49,6 @@ class Stockfish {
     }
 
     _instance = Stockfish._();
-    stdin?.forEach((line) => _instance.stdin = line);
-
     return _instance;
   }
 
@@ -66,10 +61,7 @@ class Stockfish {
   /// The standard input sink.
   set stdin(String line) {
     final stateValue = _state.value;
-    if (stateValue == StockfishState.starting) {
-      _stdinPending.add(line);
-      return;
-    } else if (stateValue != StockfishState.ready) {
+    if (stateValue != StockfishState.ready) {
       throw StateError('Stockfish is not ready ($stateValue)');
     }
 
@@ -93,17 +85,6 @@ class Stockfish {
         exitCode == 0 ? StockfishState.disposed : StockfishState.error);
 
     _instance = null;
-  }
-
-  void _onReady() {
-    if (_state.value != StockfishState.ready) return;
-
-    for (final line in _stdinPending) {
-      stdin = line;
-    }
-    _stdinPending.clear();
-
-    _state.removeListener(_onReady);
   }
 }
 
