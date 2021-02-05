@@ -9,6 +9,8 @@ import 'stockfish_state.dart';
 
 /// A wrapper for C++ engine.
 class Stockfish {
+  final Completer<Stockfish> completer;
+
   final _state = _StockfishState();
   final _stdoutController = StreamController<String>.broadcast();
   final _mainPort = ReceivePort();
@@ -17,7 +19,7 @@ class Stockfish {
   StreamSubscription _mainSubscription;
   StreamSubscription _stdoutSubscription;
 
-  Stockfish._() {
+  Stockfish._({this.completer}) {
     _mainSubscription =
         _mainPort.listen((message) => _cleanUp(message is int ? message : 1));
     _stdoutSubscription = _stdoutPort.listen((message) {
@@ -28,8 +30,13 @@ class Stockfish {
       }
     });
     compute(_spawnIsolates, [_mainPort.sendPort, _stdoutPort.sendPort]).then(
-      (success) => _state
-          ._setValue(success ? StockfishState.ready : StockfishState.error),
+      (success) {
+        final state = success ? StockfishState.ready : StockfishState.error;
+        _state._setValue(state);
+        if (state == StockfishState.ready) {
+          completer?.complete(this);
+        }
+      },
       onError: (error) {
         debugPrint('[stockfish] The init isolate encountered an error $error');
         _cleanUp(1);
@@ -40,11 +47,12 @@ class Stockfish {
   static Stockfish _instance;
 
   /// Creates a C++ engine.
+  ///
+  /// This may returns `null` if an active instance is being used.
+  /// Owner must issue `quit` command to dispose it before
+  /// a new instance can be created.
   factory Stockfish() {
     if (_instance != null) {
-      // only one instance can be used at a time
-      // owner must issue `quit` command to dispose it before
-      // a new instance can be created
       return null;
     }
 
@@ -86,6 +94,20 @@ class Stockfish {
 
     _instance = null;
   }
+}
+
+/// Creates a C++ engine asynchronously.
+///
+/// This method is different from the factory method [new Stockfish] that
+/// it will wait for the engine to be ready before returning the instance.
+Future<Stockfish> stockfishAsync() {
+  if (Stockfish._instance != null) {
+    return Future.error(StateError('Only one instance can be used at a time'));
+  }
+
+  final completer = Completer<Stockfish>();
+  Stockfish._instance = Stockfish._(completer: completer);
+  return completer.future;
 }
 
 class _StockfishState extends ChangeNotifier
