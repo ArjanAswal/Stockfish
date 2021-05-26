@@ -13,7 +13,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _AppState extends State<MyApp> {
-  Stockfish stockfish;
+  late Stockfish stockfish;
 
   @override
   void initState() {
@@ -48,7 +48,6 @@ class _AppState extends State<MyApp> {
                   onPressed: stockfish.state.value == StockfishState.disposed
                       ? () {
                           final newInstance = Stockfish();
-                          if (newInstance == null) return;
                           setState(() => stockfish = newInstance);
                         }
                       : null,

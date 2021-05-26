@@ -9,15 +9,15 @@ import 'stockfish_state.dart';
 
 /// A wrapper for C++ engine.
 class Stockfish {
-  final Completer<Stockfish> completer;
+  final Completer<Stockfish>? completer;
 
   final _state = _StockfishState();
   final _stdoutController = StreamController<String>.broadcast();
   final _mainPort = ReceivePort();
   final _stdoutPort = ReceivePort();
 
-  StreamSubscription _mainSubscription;
-  StreamSubscription _stdoutSubscription;
+  late StreamSubscription _mainSubscription;
+  late StreamSubscription _stdoutSubscription;
 
   Stockfish._({this.completer}) {
     _mainSubscription =
@@ -44,20 +44,19 @@ class Stockfish {
     );
   }
 
-  static Stockfish _instance;
+  static Stockfish? _instance;
 
   /// Creates a C++ engine.
   ///
-  /// This may returns `null` if an active instance is being used.
-  /// Owner must issue `quit` command to dispose it before
-  /// a new instance can be created.
+  /// This may throws a [StateError] if an active instance is being used.
+  /// Owner must [dispose] it before a new instance can be created.
   factory Stockfish() {
     if (_instance != null) {
-      return null;
+      throw new StateError('Multiple instances are not supported, yet.');
     }
 
     _instance = Stockfish._();
-    return _instance;
+    return _instance!;
   }
 
   /// The current state of the underlying C++ engine.
@@ -86,8 +85,8 @@ class Stockfish {
   void _cleanUp(int exitCode) {
     _stdoutController.close();
 
-    _mainSubscription?.cancel();
-    _stdoutSubscription?.cancel();
+    _mainSubscription.cancel();
+    _stdoutSubscription.cancel();
 
     _state._setValue(
         exitCode == 0 ? StockfishState.disposed : StockfishState.error);
@@ -158,23 +157,17 @@ Future<bool> _spawnIsolates(List<SendPort> mainAndStdout) async {
     return false;
   }
 
-  final stdoutIsolate =
-      await Isolate.spawn(_isolateStdout, mainAndStdout[1]).catchError((error) {
-    debugPrint('stdout error=$error');
-    return null;
-  });
-  if (stdoutIsolate == null) {
-    debugPrint('[stockfish] Failed to spawn stdout isolate');
+  try {
+    await Isolate.spawn(_isolateStdout, mainAndStdout[1]);
+  } catch (error) {
+    debugPrint('[stockfish] Failed to spawn stdout isolate: $error');
     return false;
   }
 
-  final mainIsolate =
-      await Isolate.spawn(_isolateMain, mainAndStdout[0]).catchError((error) {
-    debugPrint('main error=$error');
-    return null;
-  });
-  if (mainIsolate == null) {
-    debugPrint('[stockfish] Failed to spawn main isolate');
+  try {
+    await Isolate.spawn(_isolateMain, mainAndStdout[0]);
+  } catch (error) {
+    debugPrint('[stockfish] Failed to spawn main isolate: $error');
     return false;
   }
 
