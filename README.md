@@ -14,8 +14,6 @@ Update `dependencies` section inside `pubspec.yaml`:
   stockfish: ^0.0.3
 ```
 
-*The git dependency is temporary until the plugin is published to [pub.dev](https://pub.dev).*
-
 ### Init engine
 
 ```dart
