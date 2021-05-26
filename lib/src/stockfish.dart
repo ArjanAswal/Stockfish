@@ -73,9 +73,9 @@ class Stockfish {
       throw StateError('Stockfish is not ready ($stateValue)');
     }
 
-    final pointer = Utf8.toUtf8('$line\n');
+    final pointer = '$line\n'.toNativeUtf8();
     nativeStdinWrite(pointer);
-    free(pointer);
+    calloc.free(pointer);
   }
 
   /// Stops the C++ engine.
@@ -142,7 +142,7 @@ void _isolateStdout(SendPort stdoutPort) {
       return;
     }
 
-    final data = previous + Utf8.fromUtf8(pointer);
+    final data = previous + pointer.toDartString();
     final lines = data.split('\n');
     previous = lines.removeLast();
     for (final line in lines) {
@@ -158,15 +158,21 @@ Future<bool> _spawnIsolates(List<SendPort> mainAndStdout) async {
     return false;
   }
 
-  final stdoutIsolate = await Isolate.spawn(_isolateStdout, mainAndStdout[1])
-      .catchError((error) => debugPrint('stdout error=$error'));
+  final stdoutIsolate =
+      await Isolate.spawn(_isolateStdout, mainAndStdout[1]).catchError((error) {
+    debugPrint('stdout error=$error');
+    return null;
+  });
   if (stdoutIsolate == null) {
     debugPrint('[stockfish] Failed to spawn stdout isolate');
     return false;
   }
 
-  final mainIsolate = await Isolate.spawn(_isolateMain, mainAndStdout[0])
-      .catchError((error) => debugPrint('main error=$error'));
+  final mainIsolate =
+      await Isolate.spawn(_isolateMain, mainAndStdout[0]).catchError((error) {
+    debugPrint('main error=$error');
+    return null;
+  });
   if (mainIsolate == null) {
     debugPrint('[stockfish] Failed to spawn main isolate');
     return false;
