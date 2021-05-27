@@ -11,7 +11,7 @@ The Stockfish Chess Engine for Flutter.
 Update `dependencies` section inside `pubspec.yaml`:
 
 ```yaml
-  stockfish: ^0.0.3
+  stockfish: ^0.1.0
 ```
 
 ### Init engine
@@ -36,9 +36,7 @@ Waits until the state is ready before sending commands.
 
 ```dart
 stockfish.stdin = 'isready';
-
 stockfish.stdin = 'go movetime 3000';
-
 stockfish.stdin = 'go infinite';
 stockfish.stdin = 'stop';
 ```

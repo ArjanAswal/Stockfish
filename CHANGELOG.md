@@ -13,3 +13,7 @@
 ## [0.0.4] - 26 May 2021
 
 * Upgrade ffi
+
+## [0.1.0] - 27 May 2021
+
+* Fix crash on iOS devices
