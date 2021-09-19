@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2020 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2021 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -24,17 +24,20 @@
 #include <ostream>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 #include "types.h"
 
-const std::string engine_info(bool to_uci = false);
-const std::string compiler_info();
+namespace Stockfish {
+
+std::string engine_info(bool to_uci = false);
+std::string compiler_info();
 void prefetch(void* addr);
 void start_logger(const std::string& fname);
 void* std_aligned_alloc(size_t alignment, size_t size);
 void std_aligned_free(void* ptr);
-void* aligned_ttmem_alloc(size_t size, void*& mem);
-void aligned_ttmem_free(void* mem); // nop if mem == nullptr
+void* aligned_large_pages_alloc(size_t size); // memory aligned by page size, min alignment: 4096 bytes
+void aligned_large_pages_free(void* mem); // nop if mem == nullptr
 
 void dbg_hit_on(bool b);
 void dbg_hit_on(bool c, bool b);
@@ -63,6 +66,67 @@ std::ostream& operator<<(std::ostream&, SyncCout);
 #define sync_cout std::cout << IO_LOCK
 #define sync_endl std::endl << IO_UNLOCK
 
+
+// align_ptr_up() : get the first aligned element of an array.
+// ptr must point to an array of size at least `sizeof(T) * N + alignment` bytes,
+// where N is the number of elements in the array.
+template <uintptr_t Alignment, typename T>
+T* align_ptr_up(T* ptr)
+{
+  static_assert(alignof(T) < Alignment);
+
+  const uintptr_t ptrint = reinterpret_cast<uintptr_t>(reinterpret_cast<char*>(ptr));
+  return reinterpret_cast<T*>(reinterpret_cast<char*>((ptrint + (Alignment - 1)) / Alignment * Alignment));
+}
+
+
+// IsLittleEndian : true if and only if the binary is compiled on a little endian machine
+static inline const union { uint32_t i; char c[4]; } Le = { 0x01020304 };
+static inline const bool IsLittleEndian = (Le.c[0] == 4);
+
+
+template <typename T>
+class ValueListInserter {
+public:
+  ValueListInserter(T* v, std::size_t& s) :
+    values(v),
+    size(&s)
+  {
+  }
+
+  void push_back(const T& value) { values[(*size)++] = value; }
+private:
+  T* values;
+  std::size_t* size;
+};
+
+template <typename T, std::size_t MaxSize>
+class ValueList {
+
+public:
+  std::size_t size() const { return size_; }
+  void resize(std::size_t newSize) { size_ = newSize; }
+  void push_back(const T& value) { values_[size_++] = value; }
+  T& operator[](std::size_t index) { return values_[index]; }
+  T* begin() { return values_; }
+  T* end() { return values_ + size_; }
+  const T& operator[](std::size_t index) const { return values_[index]; }
+  const T* begin() const { return values_; }
+  const T* end() const { return values_ + size_; }
+  operator ValueListInserter<T>() { return ValueListInserter(values_, size_); }
+
+  void swap(ValueList& other) {
+    const std::size_t maxSize = std::max(size_, other.size_);
+    for (std::size_t i = 0; i < maxSize; ++i) {
+      std::swap(values_[i], other.values_[i]);
+    }
+    std::swap(size_, other.size_);
+  }
+
+private:
+  T values_[MaxSize];
+  std::size_t size_ = 0;
+};
 
 /// xorshift64star Pseudo-Random Number Generator
 /// This class is based on original code written and dedicated
@@ -130,5 +194,7 @@ namespace CommandLine {
   extern std::string binaryDirectory;  // path of the executable directory
   extern std::string workingDirectory; // path of the working directory
 }
+
+} // namespace Stockfish
 
 #endif // #ifndef MISC_H_INCLUDED
