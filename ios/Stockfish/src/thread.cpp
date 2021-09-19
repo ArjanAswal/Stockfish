@@ -36,7 +36,7 @@ ThreadPool Threads; // Global object
 
 Thread::Thread(size_t n) : idx(n), stdThread(&Thread::idle_loop, this) {
 
-  wait_for_search_finished();
+    wait_for_search_finished();
 }
 
 
@@ -45,11 +45,11 @@ Thread::Thread(size_t n) : idx(n), stdThread(&Thread::idle_loop, this) {
 
 Thread::~Thread() {
 
-  assert(!searching);
+    assert(!searching);
 
-  exit = true;
-  start_searching();
-  stdThread.join();
+    exit = true;
+    start_searching();
+    stdThread.join();
 }
 
 
@@ -57,19 +57,23 @@ Thread::~Thread() {
 
 void Thread::clear() {
 
-  counterMoves.fill(MOVE_NONE);
-  mainHistory.fill(0);
-  lowPlyHistory.fill(0);
-  captureHistory.fill(0);
+    counterMoves.fill(MOVE_NONE);
+    mainHistory.fill(0);
+    lowPlyHistory.fill(0);
+    captureHistory.fill(0);
 
-  for (bool inCheck : { false, true })
-      for (StatsType c : { NoCaptures, Captures })
-      {
-          for (auto& to : continuationHistory[inCheck][c])
+    for (bool inCheck : {
+                false, true
+            })
+        for (StatsType c : {
+                    NoCaptures, Captures
+                })
+        {
+            for (auto& to : continuationHistory[inCheck][c])
                 for (auto& h : to)
-                      h->fill(0);
-          continuationHistory[inCheck][c][NO_PIECE][0]->fill(Search::CounterMovePruneThreshold - 1);
-      }
+                    h->fill(0);
+            continuationHistory[inCheck][c][NO_PIECE][0]->fill(Search::CounterMovePruneThreshold - 1);
+        }
 }
 
 
@@ -77,9 +81,9 @@ void Thread::clear() {
 
 void Thread::start_searching() {
 
-  std::lock_guard<std::mutex> lk(mutex);
-  searching = true;
-  cv.notify_one(); // Wake up the thread in idle_loop()
+    std::lock_guard<std::mutex> lk(mutex);
+    searching = true;
+    cv.notify_one(); // Wake up the thread in idle_loop()
 }
 
 
@@ -88,8 +92,8 @@ void Thread::start_searching() {
 
 void Thread::wait_for_search_finished() {
 
-  std::unique_lock<std::mutex> lk(mutex);
-  cv.wait(lk, [&]{ return !searching; });
+    std::unique_lock<std::mutex> lk(mutex);
+    cv.wait(lk, [&] { return !searching; });
 }
 
 
@@ -98,28 +102,28 @@ void Thread::wait_for_search_finished() {
 
 void Thread::idle_loop() {
 
-  // If OS already scheduled us on a different group than 0 then don't overwrite
-  // the choice, eventually we are one of many one-threaded processes running on
-  // some Windows NUMA hardware, for instance in fishtest. To make it simple,
-  // just check if running threads are below a threshold, in this case all this
-  // NUMA machinery is not needed.
-  if (Options["Threads"] > 8)
-      WinProcGroup::bindThisThread(idx);
+    // If OS already scheduled us on a different group than 0 then don't overwrite
+    // the choice, eventually we are one of many one-threaded processes running on
+    // some Windows NUMA hardware, for instance in fishtest. To make it simple,
+    // just check if running threads are below a threshold, in this case all this
+    // NUMA machinery is not needed.
+    if (Options["Threads"] > 8)
+        WinProcGroup::bindThisThread(idx);
 
-  while (true)
-  {
-      std::unique_lock<std::mutex> lk(mutex);
-      searching = false;
-      cv.notify_one(); // Wake up anyone waiting for search finished
-      cv.wait(lk, [&]{ return searching; });
+    while (true)
+    {
+        std::unique_lock<std::mutex> lk(mutex);
+        searching = false;
+        cv.notify_one(); // Wake up anyone waiting for search finished
+        cv.wait(lk, [&] { return searching; });
 
-      if (exit)
-          return;
+        if (exit)
+            return;
 
-      lk.unlock();
+        lk.unlock();
 
-      search();
-  }
+        search();
+    }
 }
 
 /// ThreadPool::set() creates/destroys threads to match the requested number.
@@ -128,28 +132,28 @@ void Thread::idle_loop() {
 
 void ThreadPool::set(size_t requested) {
 
-  if (size() > 0)   // destroy any existing thread(s)
-  {
-      main()->wait_for_search_finished();
+    if (size() > 0)   // destroy any existing thread(s)
+    {
+        main()->wait_for_search_finished();
 
-      while (size() > 0)
-          delete back(), pop_back();
-  }
+        while (size() > 0)
+            delete back(), pop_back();
+    }
 
-  if (requested > 0)   // create new thread(s)
-  {
-      push_back(new MainThread(0));
+    if (requested > 0)   // create new thread(s)
+    {
+        push_back(new MainThread(0));
 
-      while (size() < requested)
-          push_back(new Thread(size()));
-      clear();
+        while (size() < requested)
+            push_back(new Thread(size()));
+        clear();
 
-      // Reallocate the hash with the new threadpool size
-      TT.resize(size_t(Options["Hash"]));
+        // Reallocate the hash with the new threadpool size
+        TT.resize(size_t(Options["Hash"]));
 
-      // Init thread number dependent search params.
-      Search::init();
-  }
+        // Init thread number dependent search params.
+        Search::init();
+    }
 }
 
 
@@ -157,12 +161,12 @@ void ThreadPool::set(size_t requested) {
 
 void ThreadPool::clear() {
 
-  for (Thread* th : *this)
-      th->clear();
+    for (Thread* th : *this)
+        th->clear();
 
-  main()->callsCnt = 0;
-  main()->bestPreviousScore = VALUE_INFINITE;
-  main()->previousTimeReduction = 1.0;
+    main()->callsCnt = 0;
+    main()->bestPreviousScore = VALUE_INFINITE;
+    main()->previousTimeReduction = 1.0;
 }
 
 
@@ -172,44 +176,44 @@ void ThreadPool::clear() {
 void ThreadPool::start_thinking(Position& pos, StateListPtr& states,
                                 const Search::LimitsType& limits, bool ponderMode) {
 
-  main()->wait_for_search_finished();
+    main()->wait_for_search_finished();
 
-  main()->stopOnPonderhit = stop = false;
-  increaseDepth = true;
-  main()->ponder = ponderMode;
-  Search::Limits = limits;
-  Search::RootMoves rootMoves;
+    main()->stopOnPonderhit = stop = false;
+    increaseDepth = true;
+    main()->ponder = ponderMode;
+    Search::Limits = limits;
+    Search::RootMoves rootMoves;
 
-  for (const auto& m : MoveList<LEGAL>(pos))
-      if (   limits.searchmoves.empty()
-          || std::count(limits.searchmoves.begin(), limits.searchmoves.end(), m))
-          rootMoves.emplace_back(m);
+    for (const auto& m : MoveList<LEGAL>(pos))
+        if (   limits.searchmoves.empty()
+                || std::count(limits.searchmoves.begin(), limits.searchmoves.end(), m))
+            rootMoves.emplace_back(m);
 
-  if (!rootMoves.empty())
-      Tablebases::rank_root_moves(pos, rootMoves);
+    if (!rootMoves.empty())
+        Tablebases::rank_root_moves(pos, rootMoves);
 
-  // After ownership transfer 'states' becomes empty, so if we stop the search
-  // and call 'go' again without setting a new position states.get() == NULL.
-  assert(states.get() || setupStates.get());
+    // After ownership transfer 'states' becomes empty, so if we stop the search
+    // and call 'go' again without setting a new position states.get() == NULL.
+    assert(states.get() || setupStates.get());
 
-  if (states.get())
-      setupStates = std::move(states); // Ownership transfer, states is now empty
+    if (states.get())
+        setupStates = std::move(states); // Ownership transfer, states is now empty
 
-  // We use Position::set() to set root position across threads. But there are
-  // some StateInfo fields (previous, pliesFromNull, capturedPiece) that cannot
-  // be deduced from a fen string, so set() clears them and they are set from
-  // setupStates->back() later. The rootState is per thread, earlier states are shared
-  // since they are read-only.
-  for (Thread* th : *this)
-  {
-      th->nodes = th->tbHits = th->nmpMinPly = th->bestMoveChanges = 0;
-      th->rootDepth = th->completedDepth = 0;
-      th->rootMoves = rootMoves;
-      th->rootPos.set(pos.fen(), pos.is_chess960(), &th->rootState, th);
-      th->rootState = setupStates->back();
-  }
+    // We use Position::set() to set root position across threads. But there are
+    // some StateInfo fields (previous, pliesFromNull, capturedPiece) that cannot
+    // be deduced from a fen string, so set() clears them and they are set from
+    // setupStates->back() later. The rootState is per thread, earlier states are shared
+    // since they are read-only.
+    for (Thread* th : *this)
+    {
+        th->nodes = th->tbHits = th->nmpMinPly = th->bestMoveChanges = 0;
+        th->rootDepth = th->completedDepth = 0;
+        th->rootMoves = rootMoves;
+        th->rootPos.set(pos.fen(), pos.is_chess960(), &th->rootState, th);
+        th->rootState = setupStates->back();
+    }
 
-  main()->start_searching();
+    main()->start_searching();
 }
 
 Thread* ThreadPool::get_best_thread() const {
@@ -235,8 +239,8 @@ Thread* ThreadPool::get_best_thread() const {
                 bestThread = th;
         }
         else if (   th->rootMoves[0].score >= VALUE_TB_WIN_IN_MAX_PLY
-                 || (   th->rootMoves[0].score > VALUE_TB_LOSS_IN_MAX_PLY
-                     && votes[th->rootMoves[0].pv[0]] > votes[bestThread->rootMoves[0].pv[0]]))
+                    || (   th->rootMoves[0].score > VALUE_TB_LOSS_IN_MAX_PLY
+                           && votes[th->rootMoves[0].pv[0]] > votes[bestThread->rootMoves[0].pv[0]]))
             bestThread = th;
     }
 
