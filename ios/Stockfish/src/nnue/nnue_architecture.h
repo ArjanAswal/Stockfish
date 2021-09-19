@@ -25,9 +25,9 @@
 
 #include "features/half_ka_v2.h"
 
-#include "layers/input_slice.h"
 #include "layers/affine_transform.h"
 #include "layers/clipped_relu.h"
+#include "layers/input_slice.h"
 
 namespace Stockfish::Eval::NNUE {
 
@@ -47,7 +47,7 @@ using HiddenLayer1 = ClippedReLU<AffineTransform<InputLayer, 16>>;
 using HiddenLayer2 = ClippedReLU<AffineTransform<HiddenLayer1, 32>>;
 using OutputLayer = AffineTransform<HiddenLayer2, 1>;
 
-}  // namespace Layers
+} // namespace Layers
 
 using Network = Layers::OutputLayer;
 
@@ -55,6 +55,6 @@ static_assert(TransformedFeatureDimensions % MaxSimdWidth == 0, "");
 static_assert(Network::OutputDimensions == 1, "");
 static_assert(std::is_same<Network::OutputType, std::int32_t>::value, "");
 
-}  // namespace Stockfish::Eval::NNUE
+} // namespace Stockfish::Eval::NNUE
 
 #endif // #ifndef NNUE_ARCHITECTURE_H_INCLUDED

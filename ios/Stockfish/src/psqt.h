@@ -16,16 +16,12 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #ifndef PSQT_H_INCLUDED
 #define PSQT_H_INCLUDED
 
-
 #include "types.h"
 
-
-namespace Stockfish::PSQT
-{
+namespace Stockfish::PSQT {
 
 extern Score psq[PIECE_NB][SQUARE_NB];
 
@@ -33,6 +29,5 @@ extern Score psq[PIECE_NB][SQUARE_NB];
 extern void init();
 
 } // namespace Stockfish::PSQT
-
 
 #endif // PSQT_H_INCLUDED

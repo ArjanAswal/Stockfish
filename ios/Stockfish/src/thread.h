@@ -41,98 +41,89 @@ namespace Stockfish {
 
 class Thread {
 
-    std::mutex mutex;
-    std::condition_variable cv;
-    size_t idx;
-    bool exit = false, searching = true; // Set before starting std::thread
-    NativeThread stdThread;
+  std::mutex mutex;
+  std::condition_variable cv;
+  size_t idx;
+  bool exit = false, searching = true; // Set before starting std::thread
+  NativeThread stdThread;
 
 public:
-    explicit Thread(size_t);
-    virtual ~Thread();
-    virtual void search();
-    void clear();
-    void idle_loop();
-    void start_searching();
-    void wait_for_search_finished();
-    size_t id() const {
-        return idx;
-    }
+  explicit Thread(size_t);
+  virtual ~Thread();
+  virtual void search();
+  void clear();
+  void idle_loop();
+  void start_searching();
+  void wait_for_search_finished();
+  size_t id() const { return idx; }
 
-    Pawns::Table pawnsTable;
-    Material::Table materialTable;
-    size_t pvIdx, pvLast;
-    uint64_t ttHitAverage;
-    int selDepth, nmpMinPly;
-    Color nmpColor;
-    std::atomic<uint64_t> nodes, tbHits, bestMoveChanges;
+  Pawns::Table pawnsTable;
+  Material::Table materialTable;
+  size_t pvIdx, pvLast;
+  uint64_t ttHitAverage;
+  int selDepth, nmpMinPly;
+  Color nmpColor;
+  std::atomic<uint64_t> nodes, tbHits, bestMoveChanges;
 
-    Position rootPos;
-    StateInfo rootState;
-    Search::RootMoves rootMoves;
-    Depth rootDepth, completedDepth;
-    CounterMoveHistory counterMoves;
-    ButterflyHistory mainHistory;
-    LowPlyHistory lowPlyHistory;
-    CapturePieceToHistory captureHistory;
-    ContinuationHistory continuationHistory[2][2];
-    Score trend;
+  Position rootPos;
+  StateInfo rootState;
+  Search::RootMoves rootMoves;
+  Depth rootDepth, completedDepth;
+  CounterMoveHistory counterMoves;
+  ButterflyHistory mainHistory;
+  LowPlyHistory lowPlyHistory;
+  CapturePieceToHistory captureHistory;
+  ContinuationHistory continuationHistory[2][2];
+  Score trend;
 };
-
 
 /// MainThread is a derived class specific for main thread
 
 struct MainThread : public Thread {
 
-    using Thread::Thread;
+  using Thread::Thread;
 
-    void search() override;
-    void check_time();
+  void search() override;
+  void check_time();
 
-    double previousTimeReduction;
-    Value bestPreviousScore;
-    Value iterValue[4];
-    int callsCnt;
-    bool stopOnPonderhit;
-    std::atomic_bool ponder;
+  double previousTimeReduction;
+  Value bestPreviousScore;
+  Value iterValue[4];
+  int callsCnt;
+  bool stopOnPonderhit;
+  std::atomic_bool ponder;
 };
-
 
 /// ThreadPool struct handles all the threads-related stuff like init, starting,
 /// parking and, most importantly, launching a thread. All the access to threads
 /// is done through this class.
 
-struct ThreadPool : public std::vector<Thread*> {
+struct ThreadPool : public std::vector<Thread *> {
 
-    void start_thinking(Position&, StateListPtr&, const Search::LimitsType&, bool = false);
-    void clear();
-    void set(size_t);
+  void start_thinking(Position &, StateListPtr &, const Search::LimitsType &,
+                      bool = false);
+  void clear();
+  void set(size_t);
 
-    MainThread* main()        const {
-        return static_cast<MainThread*>(front());
-    }
-    uint64_t nodes_searched() const {
-        return accumulate(&Thread::nodes);
-    }
-    uint64_t tb_hits()        const {
-        return accumulate(&Thread::tbHits);
-    }
-    Thread* get_best_thread() const;
-    void start_searching();
-    void wait_for_search_finished() const;
+  MainThread *main() const { return static_cast<MainThread *>(front()); }
+  uint64_t nodes_searched() const { return accumulate(&Thread::nodes); }
+  uint64_t tb_hits() const { return accumulate(&Thread::tbHits); }
+  Thread *get_best_thread() const;
+  void start_searching();
+  void wait_for_search_finished() const;
 
-    std::atomic_bool stop, increaseDepth;
+  std::atomic_bool stop, increaseDepth;
 
 private:
-    StateListPtr setupStates;
+  StateListPtr setupStates;
 
-    uint64_t accumulate(std::atomic<uint64_t> Thread::* member) const {
+  uint64_t accumulate(std::atomic<uint64_t> Thread::*member) const {
 
-        uint64_t sum = 0;
-        for (Thread* th : *this)
-            sum += (th->*member).load(std::memory_order_relaxed);
-        return sum;
-    }
+    uint64_t sum = 0;
+    for (Thread *th : *this)
+      sum += (th->*member).load(std::memory_order_relaxed);
+    return sum;
+  }
 };
 
 extern ThreadPool Threads;
