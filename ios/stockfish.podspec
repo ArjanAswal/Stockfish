@@ -28,7 +28,7 @@ The Stockfish Chess Engine for Flutter.
     :name => 'Download nnue',
     :script => "[ -e 'nn-3475407dc199.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-3475407dc199.nnue'"
   }
-  s.xcconfig = { 
+  s.xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     'CLANG_CXX_LIBRARY' => 'libc++',
     'OTHER_CPLUSPLUSFLAGS' => '$(inherited) -w'
