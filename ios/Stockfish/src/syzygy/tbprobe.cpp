@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2020 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2021 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -50,9 +50,11 @@
 #include <windows.h>
 #endif
 
-using namespace Tablebases;
+using namespace Stockfish::Tablebases;
 
-int Tablebases::MaxCardinality;
+int Stockfish::Tablebases::MaxCardinality;
+
+namespace Stockfish {
 
 namespace {
 
@@ -103,9 +105,6 @@ template<> inline void swap_endian<uint8_t>(uint8_t&) {}
 
 template<typename T, int LE> T number(void* addr)
 {
-    static const union { uint32_t i; char c[4]; } Le = { 0x01020304 };
-    static const bool IsLittleEndian = (Le.c[0] == 4);
-
     T v;
 
     if ((uintptr_t)addr & (alignof(T) - 1)) // Unaligned pointer (very rare)
@@ -190,7 +189,8 @@ public:
         std::stringstream ss(Paths);
         std::string path;
 
-        while (std::getline(ss, path, SepChar)) {
+        while (std::getline(ss, path, SepChar))
+        {
             fname = path + "/" + f;
             std::ifstream::open(fname);
             if (is_open())
@@ -565,7 +565,8 @@ int decompress_pairs(PairsData* d, uint64_t idx) {
     int buf64Size = 64;
     Sym sym;
 
-    while (true) {
+    while (true)
+    {
         int len = 0; // This is the symbol length - d->min_sym_len
 
         // Now get the symbol length. For any symbol s64 of length l right-padded
@@ -603,8 +604,8 @@ int decompress_pairs(PairsData* d, uint64_t idx) {
     // We binary-search for our value recursively expanding into the left and
     // right child symbols until we reach a leaf node where symlen[sym] + 1 == 1
     // that will store the value we need.
-    while (d->symlen[sym]) {
-
+    while (d->symlen[sym])
+    {
         Sym left = d->btree[sym].get<LR::Left>();
 
         // If a symbol contains 36 sub-symbols (d->symlen[sym] + 1 = 36) and
@@ -709,7 +710,7 @@ Ret do_probe_table(const Position& pos, T* entry, WDLScore wdl, ProbeState* resu
 
         leadPawns = b = pos.pieces(color_of(pc), PAWN);
         do
-            squares[size++] = pop_lsb(&b) ^ flipSquares;
+            squares[size++] = pop_lsb(b) ^ flipSquares;
         while (b);
 
         leadPawnsCnt = size;
@@ -729,7 +730,7 @@ Ret do_probe_table(const Position& pos, T* entry, WDLScore wdl, ProbeState* resu
     // directly map them to the correct color and square.
     b = pos.pieces() ^ leadPawns;
     do {
-        Square s = pop_lsb(&b);
+        Square s = pop_lsb(b);
         squares[size] = s ^ flipSquares;
         pieces[size++] = Piece(pos.piece_on(s) ^ flipColor);
     } while (b);
@@ -1000,7 +1001,7 @@ uint8_t* set_sizes(PairsData* d, uint8_t* data) {
     // so that d->lowestSym[i] >= d->lowestSym[i+1] (when read as LittleEndian).
     // Starting from this we compute a base64[] table indexed by symbol length
     // and containing 64 bit values so that d->base64[i] >= d->base64[i+1].
-    // See http://www.eecs.harvard.edu/~michaelm/E210/huffman.pdf
+    // See https://en.wikipedia.org/wiki/Huffman_coding
     for (int i = d->base64.size() - 2; i >= 0; --i) {
         d->base64[i] = (d->base64[i + 1] + number<Sym, LittleEndian>(&d->lowestSym[i])
                                          - number<Sym, LittleEndian>(&d->lowestSym[i + 1])) / 2;
@@ -1141,7 +1142,7 @@ void* mapped(TBTable<Type>& e, const Position& pos) {
     if (e.ready.load(std::memory_order_acquire))
         return e.baseAddress; // Could be nullptr if file does not exist
 
-    std::unique_lock<std::mutex> lk(mutex);
+    std::scoped_lock<std::mutex> lk(mutex);
 
     if (e.ready.load(std::memory_order_relaxed)) // Recheck under lock
         return e.baseAddress;
@@ -1440,7 +1441,7 @@ WDLScore Tablebases::probe_wdl(Position& pos, ProbeState* result) {
 // If n = 100 immediately after a capture or pawn move, then the position
 // is also certainly a win, and during the whole phase until the next
 // capture or pawn move, the inequality to be preserved is
-// dtz + 50-movecounter <= 100.
+// dtz + 50-move-counter <= 100.
 //
 // In short, if a move is available resulting in dtz + 50-move-counter <= 99,
 // then do not accept moves leading to dtz + 50-move-counter == 100.
@@ -1535,6 +1536,14 @@ bool Tablebases::root_probe(Position& pos, Search::RootMoves& rootMoves) {
             WDLScore wdl = -probe_wdl(pos, &result);
             dtz = dtz_before_zeroing(wdl);
         }
+        else if (pos.is_draw(1))
+        {
+            // In case a root move leads to a draw by repetition or
+            // 50-move rule, we set dtz to zero. Note: since we are
+            // only 1 ply from the root, this must be a true 3-fold
+            // repetition inside the game history.
+            dtz = 0;
+        }
         else
         {
             // Otherwise, take dtz for the new position and correct by 1 ply
@@ -1585,6 +1594,7 @@ bool Tablebases::root_probe_wdl(Position& pos, Search::RootMoves& rootMoves) {
 
     ProbeState result;
     StateInfo st;
+    WDLScore wdl;
 
     bool rule50 = Options["Syzygy50MoveRule"];
 
@@ -1593,7 +1603,10 @@ bool Tablebases::root_probe_wdl(Position& pos, Search::RootMoves& rootMoves) {
     {
         pos.do_move(m.pv[0], st);
 
-        WDLScore wdl = -probe_wdl(pos, &result);
+        if (pos.is_draw(1))
+            wdl = WDLDraw;
+        else
+            wdl = -probe_wdl(pos, &result);
 
         pos.undo_move(m.pv[0]);
 
@@ -1610,3 +1623,5 @@ bool Tablebases::root_probe_wdl(Position& pos, Search::RootMoves& rootMoves) {
 
     return true;
 }
+
+} // namespace Stockfish

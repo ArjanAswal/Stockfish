@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2020 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2021 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -31,6 +31,8 @@
 
 using std::string;
 
+namespace Stockfish {
+
 UCI::OptionsMap Options; // Global object
 
 namespace UCI {
@@ -41,8 +43,8 @@ void on_hash_size(const Option& o) { TT.resize(size_t(o)); }
 void on_logger(const Option& o) { start_logger(o); }
 void on_threads(const Option& o) { Threads.set(size_t(o)); }
 void on_tb_path(const Option& o) { Tablebases::init(o); }
-void on_use_NNUE(const Option& ) { Eval::init_NNUE(); }
-void on_eval_file(const Option& ) { Eval::init_NNUE(); }
+void on_use_NNUE(const Option& ) { Eval::NNUE::init(); }
+void on_eval_file(const Option& ) { Eval::NNUE::init(); }
 
 /// Our case insensitive less() function as required by UCI protocol
 bool CaseInsensitiveLess::operator() (const string& s1, const string& s2) const {
@@ -59,8 +61,6 @@ void init(OptionsMap& o) {
   constexpr int MaxHashMB = Is64Bit ? 33554432 : 2048;
 
   o["Debug Log File"]        << Option("", on_logger);
-  o["Contempt"]              << Option(24, -100, 100);
-  o["Analysis Contempt"]     << Option("Both var Off var White var Black var Both", "Both");
   o["Threads"]               << Option(1, 1, 512, on_threads);
   o["Hash"]                  << Option(16, 1, MaxHashMB, on_hash_size);
   o["Clear Hash"]            << Option(on_clear_hash);
@@ -190,3 +190,5 @@ Option& Option::operator=(const string& v) {
 }
 
 } // namespace UCI
+
+} // namespace Stockfish
