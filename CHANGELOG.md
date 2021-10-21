@@ -17,3 +17,7 @@
 ## [0.1.0] - 27 May 2021
 
 * Fix crash on iOS devices
+
+## [1.0.0] - 21 October 2021
+
+* Update to Stockfish 14

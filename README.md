@@ -4,14 +4,18 @@ The Stockfish Chess Engine for Flutter.
 
 ## Usages
 
-- iOS project must have `IPHONEOS_DEPLOYMENT_TARGET` >=11.0.
+iOS project must have `IPHONEOS_DEPLOYMENT_TARGET` >=11.0.
+
+## Example
+
+[@PScottZero](https://github.com/PScottZero) was kind enough to create a [working chess game](https://github.com/PScottZero/EnPassant/tree/stockfish) using this package.
 
 ### Add dependency
 
 Update `dependencies` section inside `pubspec.yaml`:
 
 ```yaml
-  stockfish: ^0.1.0
+  stockfish: ^1.0.0
 ```
 
 ### Init engine
