@@ -8,4 +8,4 @@ add_library(
   ${cppPaths}
 )
 
-file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-3475407dc199.nnue ${CMAKE_BINARY_DIR}/nn-3475407dc199.nnue)
+file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-3c0aa92af1da.nnue ${CMAKE_BINARY_DIR}/nn-3c0aa92af1da.nnue)

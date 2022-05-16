@@ -26,7 +26,7 @@ The Stockfish Chess Engine for Flutter.
   s.script_phase = {
     :execution_position => :before_compile,
     :name => 'Download nnue',
-    :script => "[ -e 'nn-3475407dc199.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-3475407dc199.nnue'"
+    :script => "[ -e 'nn-3c0aa92af1da.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-3c0aa92af1da.nnue'"
   }
   s.xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
