@@ -2,13 +2,13 @@
 
 The Stockfish Chess Engine for Flutter.
 
-## Usages
-
-iOS project must have `IPHONEOS_DEPLOYMENT_TARGET` >=11.0.
-
 ## Example
 
 [@PScottZero](https://github.com/PScottZero) was kind enough to create a [working chess game](https://github.com/PScottZero/EnPassant/tree/stockfish) using this package.
+
+## Usages
+
+iOS project must have `IPHONEOS_DEPLOYMENT_TARGET` >=11.0.
 
 ### Add dependency
 
