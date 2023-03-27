@@ -22,6 +22,6 @@
 
 * Update to Stockfish 14
 
-## [1.1.0] - 27 March 2023
+## [1.1.1] - 27 March 2023
 
 * Update to Stockfish 15
