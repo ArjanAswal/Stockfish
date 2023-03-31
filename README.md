@@ -23,13 +23,13 @@ Update `dependencies` section inside `pubspec.yaml`:
 ```dart
 import 'package:stockfish/stockfish.dart';
 
-# create a new instance
+// create a new instance
 final stockfish = Stockfish();
 
-# state is a ValueListenable<StockfishState>
+// state is a ValueListenable<StockfishState>
 print(stockfish.state.value); # StockfishState.starting
 
-# the engine takes a few moment to start
+// the engine takes a few moment to start
 await Future.delayed(...)
 print(stockfish.state.value); # StockfishState.ready
 ```
@@ -49,7 +49,7 @@ Engine output is directed to a `Stream<String>`, add a listener to process resul
 
 ```dart
 stockfish.stdout.listen((line) {
-  # do something useful
+  // do something useful
   print(line);
 });
 ```
@@ -59,10 +59,10 @@ stockfish.stdout.listen((line) {
 There are two active isolates when Stockfish engine is running. That interferes with Flutter's hot reload feature so you need to dispose it before attempting to reload.
 
 ```dart
-# sends the UCI quit command
+// sends the UCI quit command
 stockfish.stdin = 'quit';
 
-# or even easier...
+// or even easier...
 stockfish.dispose();
 ```
 
