@@ -4,10 +4,11 @@ import 'package:stockfish/stockfish.dart';
 import 'src/output_widget.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
+  const MyApp({super.key});
   @override
   State<StatefulWidget> createState() => _AppState();
 }
@@ -36,7 +37,7 @@ class _AppState extends State<MyApp> {
                 animation: stockfish.state,
                 builder: (_, __) => Text(
                   'stockfish.state=${stockfish.state.value}',
-                  key: ValueKey('stockfish.state'),
+                  key: const ValueKey('stockfish.state'),
                 ),
               ),
             ),
@@ -51,7 +52,7 @@ class _AppState extends State<MyApp> {
                           setState(() => stockfish = newInstance);
                         }
                       : null,
-                  child: Text('Reset Stockfish instance'),
+                  child: const Text('Reset Stockfish instance'),
                 ),
               ),
             ),
@@ -59,7 +60,7 @@ class _AppState extends State<MyApp> {
               padding: const EdgeInsets.all(8.0),
               child: TextField(
                 autocorrect: false,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Custom UCI command',
                   hintText: 'go infinite',
                 ),
