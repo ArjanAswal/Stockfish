@@ -1,15 +1,15 @@
 name: stockfish_example
 description: Demonstrates how to use the stockfish plugin.
-version: 0.0.1
-publish_to: "none"
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 0.0.1+1
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: '>=2.19.6 <3.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-
   stockfish:
     path: ../
 
@@ -19,5 +19,8 @@ dev_dependencies:
   integration_test:
     sdk: flutter
 
+  flutter_lints: ^2.0.0
+
 flutter:
+
   uses-material-design: true

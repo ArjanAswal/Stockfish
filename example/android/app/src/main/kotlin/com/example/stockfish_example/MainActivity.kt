@@ -1,4 +1,4 @@
-package com.stockfish_example
+package com.example.stockfish_example
 
 import io.flutter.embedding.android.FlutterActivity
 

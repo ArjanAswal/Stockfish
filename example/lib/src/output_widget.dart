@@ -75,7 +75,7 @@ class _OutputState extends State<OutputWidget> {
       return _text(item, line);
     }
 
-    return SizedBox.shrink();
+    return const SizedBox.shrink();
   }
 
   Widget _text(_OutputItem item, String data) => Padding(

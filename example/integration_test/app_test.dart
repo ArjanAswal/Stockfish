@@ -31,7 +31,7 @@ void main() {
 }
 
 void _expectState(WidgetTester tester, StockfishState state) {
-  final found = find.byKey(ValueKey('stockfish.state')).evaluate();
+  final found = find.byKey(const ValueKey('stockfish.state')).evaluate();
   expect(found.length, equals(1));
 
   final widget = found.first.widget as Text;
