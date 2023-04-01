@@ -25,3 +25,7 @@
 ## [1.1.1] - 27 March 2023
 
 * Update to Stockfish 15
+
+## [1.2.0] - 1 April 2023
+
+* Update example app and dependencies
