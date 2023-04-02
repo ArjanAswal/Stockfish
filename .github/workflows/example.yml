@@ -1,0 +1,31 @@
+name: Example
+on:
+  push:
+
+jobs:
+  ios:
+    defaults:
+      run:
+        working-directory: example
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+
+      - name: Create iOS simulator
+        run: |
+          set -e
+          _runtime=$(xcrun simctl list runtimes ios -j | jq -r '.runtimes[-1]')
+          _runtimeId=$(echo $_runtime | jq -r .identifier)
+          echo "_runtimeId=$_runtimeId"
+
+          _deviceType=$(echo $_runtime | jq -r '.supportedDeviceTypes[-1]')
+          _deviceTypeName=$(echo $_deviceType | jq -r .name)
+          echo "_deviceTypeName=$_deviceTypeName"
+          _deviceTypeId=$(echo $_deviceType | jq -r .identifier)
+          echo "_deviceTypeId=$_deviceTypeId"
+
+          xcrun simctl create "$_deviceTypeName" "$_deviceTypeId" "$_runtimeId" | xargs xcrun simctl boot
+
+      - run: flutter test integration_test/app_test.dart
