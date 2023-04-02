@@ -23,12 +23,12 @@ jobs:
           flutter-version: ${{ matrix.flutter-version }}
 
       - name: Cache pub get
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ env.PUB_CACHE }}
           key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
       - name: Cache CocoaPods
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: example/ios/Pods
           key: example-ios-pods-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/ios/Podfile.lock') }}
