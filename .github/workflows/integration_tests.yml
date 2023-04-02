@@ -1,0 +1,51 @@
+name: Integration tests
+on:
+  push:
+
+jobs:
+  ios:
+    strategy:
+      matrix:
+        include:
+          - flutter-version: 3.x
+            macos-version: macos-11
+          - flutter-version: 3.0.0
+            macos-version: macos-12
+          - flutter-version: 3.x
+            macos-version: macos-12
+    runs-on: ${{ matrix.macos-version }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: flutter-action
+        uses: subosito/flutter-action@v2
+        with:
+          cache: true
+          flutter-version: ${{ matrix.flutter-version }}
+
+      - name: Cache pub get
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
+      - name: Cache CocoaPods
+        uses: actions/cache@v3
+        with:
+          path: example/ios/Pods
+          key: example-ios-pods-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/ios/Podfile.lock') }}
+
+      - name: Create iOS simulator
+        run: |
+          set -e
+          _runtime=$(xcrun simctl list runtimes ios -j | jq -r '.runtimes[-1]')
+          _runtimeId=$(echo $_runtime | jq -r .identifier)
+          echo "_runtimeId=$_runtimeId"
+
+          _deviceType=$(echo $_runtime | jq -r '.supportedDeviceTypes[-1]')
+          _deviceTypeName=$(echo $_deviceType | jq -r .name)
+          echo "_deviceTypeName=$_deviceTypeName"
+          _deviceTypeId=$(echo $_deviceType | jq -r .identifier)
+          echo "_deviceTypeId=$_deviceTypeId"
+
+          xcrun simctl create "$_deviceTypeName" "$_deviceTypeId" "$_runtimeId" | xargs xcrun simctl boot
+
+      - run: ./example/integration_test/execute.sh
