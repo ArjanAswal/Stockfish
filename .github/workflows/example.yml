@@ -4,9 +4,6 @@ on:
 
 jobs:
   ios:
-    defaults:
-      run:
-        working-directory: example
     strategy:
       matrix:
         macos-version: [macos-11, macos-12]
@@ -17,6 +14,17 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           cache: true
+
+      - name: Cache pub get
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: pub-cache-${{ hashFiles('example/pubspec.lock') }}
+      - name: Cache CocoaPods
+        uses: actions/cache@v2
+        with:
+          path: example/ios/Pods
+          key: example-ios-pods-${{ hashFiles('example/ios/Podfile.lock') }}
 
       - name: Create iOS simulator
         run: |
@@ -33,4 +41,4 @@ jobs:
 
           xcrun simctl create "$_deviceTypeName" "$_deviceTypeId" "$_runtimeId" | xargs xcrun simctl boot
 
-      - run: flutter test integration_test/app_test.dart
+      - run: ./example/integration_test/execute.sh
