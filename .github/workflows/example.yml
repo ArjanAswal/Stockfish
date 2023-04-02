@@ -6,7 +6,13 @@ jobs:
   ios:
     strategy:
       matrix:
-        macos-version: [macos-11, macos-12]
+        include:
+          - flutter-version: 3.x
+            macos-version: macos-11
+          - flutter-version: 3.0.0
+            macos-version: macos-12
+          - flutter-version: 3.x
+            macos-version: macos-12
     runs-on: ${{ matrix.macos-version }}
     steps:
       - uses: actions/checkout@v3
@@ -14,6 +20,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           cache: true
+          flutter-version: ${{ matrix.flutter-version }}
 
       - name: Cache pub get
         uses: actions/cache@v2
