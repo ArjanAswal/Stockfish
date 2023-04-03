@@ -7,13 +7,13 @@ jobs:
     strategy:
       matrix:
         include:
-          - api-level: 33
+          - api-level: 31
             flutter-version: 3.0.0 # flutter: ">=3.0.0"
           - api-level: 16 # flutter.minSdkVersion
             flutter-version: 3.x
-          - api-level: 30 # Android 11
+          - api-level: 30 # Android 11, most popular
             flutter-version: 3.x
-          - api-level: 33 # flutter.compileSdkVersion
+          - api-level: 31 # flutter.compileSdkVersion=33 but 31 is the maximum `system-images` available
             flutter-version: 3.x
     runs-on: macos-latest
     steps:
