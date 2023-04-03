@@ -57,6 +57,12 @@ jobs:
           - flutter-version: 3.x
             macos-version: macos-12
     runs-on: ${{ matrix.macos-version }}
+
+    # temporary disable iOS pipeline during Android pipeline development
+    # we expect it will take a long time due to flaky emulator issues
+    # see https://github.com/ReactiveCircus/android-emulator-runner/issues/324
+    if: github.ref == 'refs/heads/master'
+
     steps:
       - uses: actions/checkout@v3
       - id: flutter-action
