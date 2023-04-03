@@ -3,14 +3,57 @@ on:
   push:
 
 jobs:
+  android:
+    strategy:
+      matrix:
+        include:
+          - api-level: 33
+            flutter-version: 3.0.0 # flutter: ">=3.0.0"
+          - api-level: 16 # flutter.minSdkVersion
+            flutter-version: 3.x
+          - api-level: 30 # Android 11
+            flutter-version: 3.x
+          - api-level: 33 # flutter.compileSdkVersion
+            flutter-version: 3.x
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: flutter-action
+        uses: subosito/flutter-action@v2
+        with:
+          cache: true
+          flutter-version: ${{ matrix.flutter-version }}
+      - name: Cache pub get
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
+
+      - name: Setup Java 11
+        uses: actions/setup-java@v3
+        with:
+          cache: gradle
+          distribution: temurin
+          java-version: "11"
+
+      - name: Run integration test against Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./example/integration_test/execute.sh 
+
   ios:
     strategy:
       matrix:
         include:
+          - flutter-version: 3.0.0 # flutter: ">=3.0.0"
+            macos-version: macos-12
           - flutter-version: 3.x
             macos-version: macos-11
-          - flutter-version: 3.0.0
-            macos-version: macos-12
           - flutter-version: 3.x
             macos-version: macos-12
     runs-on: ${{ matrix.macos-version }}
