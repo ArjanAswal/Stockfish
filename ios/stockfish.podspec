@@ -2,16 +2,18 @@
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
 # Run `pod lib lint stockfish.podspec' to validate before publishing.
 #
+#
+require 'yaml'
+
+pubspec = YAML.load(File.read(File.join(__dir__, '../pubspec.yaml')))
+
 Pod::Spec.new do |s|
-  s.name             = 'stockfish'
-  s.version          = '0.0.1'
-  s.summary          = 'The Stockfish Chess Engine for Flutter.'
-  s.description      = <<-DESC
-The Stockfish Chess Engine for Flutter.
-                       DESC
-  s.homepage         = 'http://example.com'
+  s.name             = pubspec['name']
+  s.version          = pubspec['version']
+  s.summary          = pubspec['description']
+  s.homepage         = pubspec['homepage']
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = 'Arjan Aswal'
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*', 'FlutterStockfish/*', 'Stockfish/src/**/*'
   s.public_header_files = 'Classes/**/*.h'
@@ -31,6 +33,7 @@ The Stockfish Chess Engine for Flutter.
   s.xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     'CLANG_CXX_LIBRARY' => 'libc++',
-    'OTHER_CPLUSPLUSFLAGS' => '$(inherited) -w'
+    'OTHER_CPLUSPLUSFLAGS' => '$(inherited) -fno-exceptions -std=c++17 -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -flto=thin',
+    'OTHER_LDFLAGS' => '$(inherited) -fno-exceptions -std=c++17 -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -flto=thin'
   }
 end
