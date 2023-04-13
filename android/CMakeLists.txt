@@ -7,6 +7,9 @@ add_library(
   ../ios/FlutterStockfish/ffi.cpp
   ${cppPaths}
 )
-target_compile_options(stockfish PRIVATE -std=c++17 -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -DUSE_NEON)
+
+if(ANDROID_ABI STREQUAL arm64-v8a)
+  target_compile_options(stockfish PRIVATE -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -DUSE_NEON)
+endif()
 
 file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-6877cd24400e.nnue ${CMAKE_BINARY_DIR}/nn-6877cd24400e.nnue)

@@ -25,11 +25,10 @@ android {
     compileSdkVersion 29
 
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 16
         externalNativeBuild {
             cmake {
-                arguments '-DANDROID_ARM_NEON=TRUE'
-                abiFilters 'arm64-v8a'
+                cppFlags "-std=c++17"
             }
         }
     }
