@@ -30,7 +30,7 @@ Pod::Spec.new do |s|
   s.script_phase = {
     :execution_position => :before_compile,
     :name => 'Download nnue',
-    :script => "[ -e 'nn-6877cd24400e.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-6877cd24400e.nnue'"
+    :script => "[ -e 'nn-ad9b42354671.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-ad9b42354671.nnue'"
   }
   s.xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
