@@ -1,19 +1,22 @@
-name: Integration tests
 on:
   push:
 
 jobs:
   android:
+    name: 'Android APKs'
     strategy:
       matrix:
         include:
-          - api-level: 31
-            flutter-version: 3.0.0 # flutter: ">=3.0.0"
-          - api-level: 16 # flutter.minSdkVersion
+          # oldest supported Android API level (flutter.minSdkVersion) with latest Flutter version
+          - api-level: 16
             flutter-version: 3.x
-          - api-level: 31 # flutter.compileSdkVersion=33 but 31 is the maximum `system-images` available
+          # latest supported Android API level (flutter.compileSdkVersion) with latest Flutter version
+          - api-level: 33
             flutter-version: 3.x
-    runs-on: macos-latest
+          # oldest supported combination
+          - api-level: 16
+            flutter-version: 3.0.0
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
@@ -35,31 +38,37 @@ jobs:
           distribution: temurin
           java-version: "11"
 
-      - name: Run integration test against Android emulator
-        uses: reactivecircus/android-emulator-runner@v2
+      - run: flutter build apk --split-per-abi
+        working-directory: example
+
+      - uses: actions/upload-artifact@v3
         with:
-          api-level: ${{ matrix.api-level }}
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          script: ./example/integration_test/execute.sh 
+          name: ${{ github.sha }}-arm64-v8a
+          path: example/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.sha }}-armeabi-v7a
+          path: example/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.sha }}-x86_64
+          path: example/build/app/outputs/flutter-apk/app-x86_64-release.apk
 
   ios:
+    name: 'iOS integration tests'
     strategy:
       matrix:
         include:
-          - flutter-version: 3.0.0 # flutter: ">=3.0.0"
-            macos-version: macos-12
+          # oldest available macOS version on GitHub Actions with latest Flutter version
           - flutter-version: 3.x
             macos-version: macos-11
+          # latest available macOS version on GitHub Actions with latest Flutter version
           - flutter-version: 3.x
             macos-version: macos-12
+          # oldest supported combination
+          - flutter-version: 3.0.0
+            macos-version: macos-11
     runs-on: ${{ matrix.macos-version }}
-
-    # temporary disable iOS pipeline during Android pipeline development
-    # we expect it will take a long time due to flaky emulator issues
-    # see https://github.com/ReactiveCircus/android-emulator-runner/issues/324
-    if: github.ref == 'refs/heads/master'
 
     steps:
       - uses: actions/checkout@v3
