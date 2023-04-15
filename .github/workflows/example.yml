@@ -4,12 +4,10 @@ on:
 
 jobs:
   android:
-    name: 'Android APKs'
+    name: Android APKs
     strategy:
       matrix:
-        include:
-          - flutter-version: 3.x
-          - flutter-version: 3.0.0
+        flutter-version: [3.x, 3.0.0]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -37,19 +35,19 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: ${{ github.sha }}-${{ matrix.flutter-version }}-arm64-v8a
+          name: ${{ steps.flutter-action.outputs.VERSION }}-arm64-v8a
           path: example/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
       - uses: actions/upload-artifact@v3
         with:
-          name: ${{ github.sha }}-${{ matrix.flutter-version }}-armeabi-v7a
+          name: ${{ steps.flutter-action.outputs.VERSION }}-armeabi-v7a
           path: example/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
       - uses: actions/upload-artifact@v3
         with:
-          name: ${{ github.sha }}-${{ matrix.flutter-version }}-x86_64
+          name: ${{ steps.flutter-action.outputs.VERSION }}-x86_64
           path: example/build/app/outputs/flutter-apk/app-x86_64-release.apk
 
   ios:
-    name: 'iOS integration tests'
+    name: iOS integration tests
     strategy:
       matrix:
         include:
