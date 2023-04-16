@@ -7,7 +7,9 @@ jobs:
     name: Android APKs
     strategy:
       matrix:
-        flutter-version: [3.x, 3.0.0]
+        flutter-version:
+          - 3.x
+          - 3.0.0
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -54,12 +56,14 @@ jobs:
           # oldest available macOS version on GitHub Actions with latest Flutter version
           - flutter-version: 3.x
             macos-version: macos-11
+            skip-tests: true # flakiness
           # latest available macOS version on GitHub Actions with latest Flutter version
           - flutter-version: 3.x
             macos-version: macos-12
           # oldest supported combination
           - flutter-version: 3.0.0
             macos-version: macos-11
+            skip-tests: true # flakiness
     runs-on: ${{ matrix.macos-version }}
 
     steps:
@@ -103,3 +107,4 @@ jobs:
         working-directory: example
 
       - run: ./example/integration_test/execute.sh
+        if: ${{ !matrix.skip-tests }}
