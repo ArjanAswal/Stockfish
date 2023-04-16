@@ -21,7 +21,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.PUB_CACHE }}
-          key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
+          key: pub-cache-ubuntu-latest-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
 
       - name: Setup Java 11
         uses: actions/setup-java@v3
@@ -74,12 +74,12 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.PUB_CACHE }}
-          key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
+          key: pub-cache-${{ matrix.macos-version }}-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
       - name: Cache CocoaPods
         uses: actions/cache@v3
         with:
           path: example/ios/Pods
-          key: example-ios-pods-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/ios/Podfile.lock') }}
+          key: example-ios-pods-${{ matrix.macos-version }}-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/ios/Podfile.lock') }}
 
       - name: Create iOS simulator
         run: |
