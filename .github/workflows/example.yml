@@ -96,4 +96,10 @@ jobs:
 
           xcrun simctl create "$_deviceTypeName" "$_deviceTypeId" "$_runtimeId" | xargs xcrun simctl boot
 
+      # pre-build the app to (hopefully) speed up the test execution time,
+      # avoiding the `Test timed out after 12 minutes.` error.
+      # Apparently the timeout could not be configured, see https://github.com/flutter/flutter/issues/105913
+      - run: flutter build ios --simulator --target=integration_test/app_test.dart
+        working-directory: example
+
       - run: ./example/integration_test/execute.sh
