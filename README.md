@@ -1,6 +1,6 @@
 # stockfish
 
-![Integration tests](https://github.com/ArjanAswal/Stockfish/actions/workflows/integration_tests.yml/badge.svg)
+![Pipeline](https://github.com/ArjanAswal/Stockfish/actions/workflows/pipeline.yml/badge.svg)
 
 The Stockfish Chess Engine for Flutter.
 
