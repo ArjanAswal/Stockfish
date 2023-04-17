@@ -10,6 +10,8 @@ add_library(
 
 if(ANDROID_ABI STREQUAL arm64-v8a)
   target_compile_options(stockfish PRIVATE -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -DUSE_NEON)
+else()
+  target_compile_options(stockfish PRIVATE -DUSE_PTHREADS -DNDEBUG -O3)
 endif()
 
 file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-ad9b42354671.nnue ${CMAKE_BINARY_DIR}/nn-ad9b42354671.nnue)
