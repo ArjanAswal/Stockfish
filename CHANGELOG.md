@@ -29,3 +29,9 @@
 ## [1.2.0] - 1 April 2023
 
 * Update example app and dependencies
+
+## [1.3.0] - 18 April 2023
+
+* Improve performance for both iOS and Android devices
+* Update to Stockfish 15.1
+* Change license to GPL
