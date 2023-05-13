@@ -53,10 +53,9 @@ jobs:
     strategy:
       matrix:
         include:
-          # oldest available macOS version on GitHub Actions with latest Flutter version
-          - avd-api-level: 31
-            avd-arch: arm64-v8a
-            avd-profile: Nexus 6
+          - avd-api-level: 29
+            # avd-arch: arm64-v8a
+            # avd-profile: Nexus 6
             flutter-version: 3.x
             macos-version: macos-12
     runs-on: ${{ matrix.macos-version }}
@@ -79,9 +78,9 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.avd-api-level }}
-          arch: ${{ matrix.avd-arch }}
+          # arch: ${{ matrix.avd-arch }}
           avd-name: stockfish
-          profile: ${{ matrix.avd-profile }}
+          # profile: ${{ matrix.avd-profile }}
           script: ./example/integration_test/execute.sh
 
   ios_test:
