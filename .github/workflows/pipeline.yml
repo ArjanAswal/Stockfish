@@ -52,9 +52,13 @@ jobs:
     name: Android integration tests
     strategy:
       matrix:
-        api-level: [31]
-        flutter-version: [3.x]
-        macos-version: [macos-12]
+        include:
+          # oldest available macOS version on GitHub Actions with latest Flutter version
+          - avd-api-level: 31
+            avd-arch: arm64-v8a
+            avd-profile: Nexus 6
+            flutter-version: 3.x
+            macos-version: macos-12
     runs-on: ${{ matrix.macos-version }}
 
     steps:
@@ -74,8 +78,10 @@ jobs:
       - name: Execute integration test
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ matrix.api-level }}
+          api-level: ${{ matrix.avd-api-level }}
+          arch: ${{ matrix.avd-arch }}
           avd-name: stockfish
+          profile: ${{ matrix.avd-profile }}
           script: ./example/integration_test/execute.sh
 
   ios_test:
