@@ -65,6 +65,7 @@ jobs:
           cache: true
           flutter-version: ${{ matrix.flutter-version }}
       - uses: actions/setup-java@v3
+        if: false
         with:
           cache: gradle
           distribution: temurin
