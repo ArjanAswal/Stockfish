@@ -76,7 +76,7 @@ jobs:
         with:
           api-level: ${{ matrix.avd-api-level }}
           avd-name: stockfish
-          script: JAVA_HOME=JAVA_HOME_17_X64 ./example/integration_test/execute.sh
+          script: JAVA_HOME=JAVA_HOME_11_X64 ./example/integration_test/execute.sh
 
   ios_test:
     name: iOS integration tests
