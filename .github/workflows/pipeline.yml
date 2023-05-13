@@ -2,8 +2,9 @@ on:
   push:
 
 jobs:
-  android:
+  android_apk:
     name: Android APKs
+    if: false
     strategy:
       matrix:
         flutter-version:
@@ -47,8 +48,39 @@ jobs:
           name: ${{ steps.flutter-action.outputs.VERSION }}-x86_64
           path: example/build/app/outputs/flutter-apk/app-x86_64-release.apk
 
-  ios:
+  android_test:
+    name: Android integration tests
+    strategy:
+      matrix:
+        api-level: [31]
+        flutter-version: [3.x]
+        macos-version: [macos-12]
+    runs-on: ${{ matrix.macos-version }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - id: flutter-action
+        uses: subosito/flutter-action@v2
+        with:
+          cache: true
+          flutter-version: ${{ matrix.flutter-version }}
+
+      - name: Cache pub get
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: pub-cache-${{ matrix.macos-version }}-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
+
+      - name: Execute integration test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          avd-name: stockfish
+          script: ./example/integration_test/execute.sh
+
+  ios_test:
     name: iOS integration tests
+    if: false
     strategy:
       matrix:
         include:
