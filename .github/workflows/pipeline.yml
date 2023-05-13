@@ -54,11 +54,8 @@ jobs:
       matrix:
         include:
           - avd-api-level: 29
-            # avd-arch: arm64-v8a
-            # avd-profile: Nexus 6
             flutter-version: 3.x
-            macos-version: macos-12
-    runs-on: ${{ matrix.macos-version }}
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v3
@@ -67,20 +64,23 @@ jobs:
         with:
           cache: true
           flutter-version: ${{ matrix.flutter-version }}
+      - uses: actions/setup-java@v3
+        with:
+          cache: gradle
+          distribution: temurin
+          java-version: "11"
 
       - name: Cache pub get
         uses: actions/cache@v3
         with:
           path: ${{ env.PUB_CACHE }}
-          key: pub-cache-${{ matrix.macos-version }}-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
+          key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
 
       - name: Execute integration test
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.avd-api-level }}
-          # arch: ${{ matrix.avd-arch }}
           avd-name: stockfish
-          # profile: ${{ matrix.avd-profile }}
           script: ./example/integration_test/execute.sh
 
   ios_test:
