@@ -71,12 +71,17 @@ jobs:
           path: ${{ env.PUB_CACHE }}
           key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
 
+      - name: Run flutter doctor -v
+        run: flutter doctor -v
+      - name: Run flutter doctor -v (Java 11)
+        run: JAVA_HOME=$JAVA_HOME_11_X64 flutter doctor -v
+
       - name: Execute integration test
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.avd-api-level }}
           avd-name: stockfish
-          script: JAVA_HOME=JAVA_HOME_11_X64 ./example/integration_test/execute.sh
+          script: JAVA_HOME=$JAVA_HOME_11_X64 ./example/integration_test/execute.sh
 
   ios_test:
     name: iOS integration tests
