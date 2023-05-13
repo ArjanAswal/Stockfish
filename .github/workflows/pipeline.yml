@@ -64,12 +64,6 @@ jobs:
         with:
           cache: true
           flutter-version: ${{ matrix.flutter-version }}
-      - uses: actions/setup-java@v3
-        if: false
-        with:
-          cache: gradle
-          distribution: temurin
-          java-version: "11"
 
       - name: Cache pub get
         uses: actions/cache@v3
@@ -82,7 +76,7 @@ jobs:
         with:
           api-level: ${{ matrix.avd-api-level }}
           avd-name: stockfish
-          script: ./example/integration_test/execute.sh
+          script: JAVA_HOME=JAVA_HOME_17_X64 ./example/integration_test/execute.sh
 
   ios_test:
     name: iOS integration tests
@@ -96,7 +90,7 @@ jobs:
             skip-tests: true # flakiness
           # latest available macOS version on GitHub Actions with latest Flutter version
           - flutter-version: 3.x
-            macos-version: macos-12
+            macos-version: macos-13
           # oldest supported combination
           - flutter-version: 3.0.0
             macos-version: macos-11
