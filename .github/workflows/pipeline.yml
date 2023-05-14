@@ -71,12 +71,26 @@ jobs:
           path: ${{ env.PUB_CACHE }}
           key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
 
+      # pre-build the app to (hopefully) speed up the test execution time,
+      # avoiding the `Test timed out after 12 minutes.` error.
+      # Apparently the timeout could not be configured, see https://github.com/flutter/flutter/issues/105913
+      - name: Run flutter build apk
+        run: |
+          set -e
+
+          # use Java 11
+          export JAVA_HOME=$JAVA_HOME_11_X64
+          echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
+
+          flutter build apk --debug --target=integration_test/app_test.dart
+        working-directory: example
+
       - name: Execute integration test
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.avd-api-level }}
           avd-name: stockfish
-          script: JAVA_HOME=$JAVA_HOME_11_X64 ./example/integration_test/execute.sh
+          script: ./example/integration_test/execute.sh
 
   ios_test:
     name: iOS integration tests
