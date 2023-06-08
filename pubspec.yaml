@@ -1,6 +1,6 @@
 name: stockfish
 description: The Stockfish Chess Engine for Flutter.
-version: 1.3.0
+version: 1.4.0
 repository: https://github.com/ArjanAswal/stockfish.git
 homepage: https://github.com/ArjanAswal/stockfish.git
 

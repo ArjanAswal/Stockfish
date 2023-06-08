@@ -35,3 +35,7 @@
 * Improve performance for both iOS and Android devices
 * Update to Stockfish 15.1
 * Change license to GPL
+
+## [1.4.0] - 8 June 2023
+
+* Bug fixes and improvements
