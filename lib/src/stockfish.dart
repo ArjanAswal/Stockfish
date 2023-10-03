@@ -27,6 +27,7 @@ class Stockfish {
         _mainPort.listen((message) => _cleanUp(message is int ? message : 1));
     _stdoutSubscription = _stdoutPort.listen((message) {
       if (message is String) {
+        _logger.finest('The stdout isolate sent $message');
         _stdoutController.sink.add(message);
       } else {
         _logger.fine('The stdout isolate sent $message');
@@ -35,6 +36,7 @@ class Stockfish {
     compute(_spawnIsolates, [_mainPort.sendPort, _stdoutPort.sendPort]).then(
       (success) {
         final state = success ? StockfishState.ready : StockfishState.error;
+        _logger.fine('The init isolate reported $state');
         _state._setValue(state);
         if (state == StockfishState.ready) {
           completer?.complete(this);
@@ -100,7 +102,7 @@ class Stockfish {
 
 /// Creates a C++ engine asynchronously.
 ///
-/// This method is different from the factory method [new Stockfish] that
+/// This method is different from the factory method [Stockfish.new] that
 /// it will wait for the engine to be ready before returning the instance.
 Future<Stockfish> stockfishAsync() {
   if (Stockfish._instance != null) {
