@@ -14,8 +14,8 @@ jobs:
             macos-version: macos-11
           - avd-api-level: 34
             avd-target: google_apis
-            flutter-version: 3.x
-            macos-version: macos-13
+            flutter-version: any
+            macos-version: macos-latest
     runs-on: ${{ matrix.macos-version }}
 
     steps:
@@ -78,16 +78,14 @@ jobs:
 
   ios_test:
     name: iOS integration tests
-    continue-on-error: ${{ matrix.skip-tests }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - flutter-version: 3.0.0
             macos-version: macos-11
-            skip-tests: true # flakiness
-          - flutter-version: 3.x
-            macos-version: macos-13
-            skip-tests: false
+          - flutter-version: any
+            macos-version: macos-latest
     runs-on: ${{ matrix.macos-version }}
 
     steps:
@@ -110,7 +108,6 @@ jobs:
           key: example-ios-pods-${{ matrix.macos-version }}-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/ios/Podfile.lock') }}
 
       - name: Create iOS simulator
-        if: ${{ !matrix.skip-tests }}
         run: |
           set -e
           _runtime=$(xcrun simctl list runtimes ios -j | jq -r '.runtimes[-1]')
@@ -132,4 +129,3 @@ jobs:
         working-directory: example
 
       - run: ./example/integration_test/execute.sh
-        if: ${{ !matrix.skip-tests }}
