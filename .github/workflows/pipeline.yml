@@ -119,6 +119,12 @@ jobs:
           disable-animations: true
           script: ./example/integration_test/execute.sh
 
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: ${{ steps.flutter-action.outputs.VERSION }}-flutter-apk
+          path: example/build/app/outputs/flutter-apk
+
   ios_test:
     name: iOS integration tests
     if: false
