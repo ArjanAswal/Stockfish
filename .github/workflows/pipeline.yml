@@ -8,15 +8,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - avd-api-level: 31
-            avd-arch: x86_64
-            avd-channel: stable
+          - avd-api-level: 21
             avd-target: google_apis
             flutter-version: 3.0.0
             macos-version: macos-11
-          - avd-api-level: 31
-            avd-arch: x86_64
-            avd-channel: stable
+          - avd-api-level: 34
             avd-target: google_apis
             flutter-version: 3.x
             macos-version: macos-13
@@ -57,14 +53,13 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.avd-api-level }}
+          key: avd-${{ matrix.avd-api-level }}-${{ matrix.avd-target }}
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.avd-api-level }}
-          arch: ${{ matrix.avd-arch }}
-          channel: ${{ matrix.avd-channel }}
+          arch: x86_64
           target: ${{ matrix.avd-target }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
@@ -74,8 +69,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.avd-api-level }}
-          arch: ${{ matrix.avd-arch }}
-          channel: ${{ matrix.avd-channel }}
+          arch: x86_64
           target: ${{ matrix.avd-target }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
@@ -93,6 +87,7 @@ jobs:
             skip-tests: true # flakiness
           - flutter-version: 3.x
             macos-version: macos-13
+            skip-tests: false
     runs-on: ${{ matrix.macos-version }}
 
     steps:
