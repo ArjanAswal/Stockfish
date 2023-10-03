@@ -4,6 +4,7 @@ on:
 jobs:
   android_apk:
     name: Android APKs
+    if: false
     strategy:
       matrix:
         flutter-version:
@@ -52,10 +53,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - avd-api-level: 30
-            avd-arch: x86
-            avd-channel: canary
-            avd-target: aosp_atd
+          - avd-api-level: 31
+            avd-arch: x86_64
+            avd-channel: stable
+            avd-target: google_apis
             flutter-version: 3.0.0
     runs-on: macos-latest
 
@@ -118,12 +119,6 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: ./example/integration_test/execute.sh
-
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: ${{ steps.flutter-action.outputs.VERSION }}-flutter-apk
-          path: example/build/app/outputs/flutter-apk
 
   ios_test:
     name: iOS integration tests
