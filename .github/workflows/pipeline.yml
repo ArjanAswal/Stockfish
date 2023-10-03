@@ -4,7 +4,6 @@ on:
 jobs:
   android_apk:
     name: Android APKs
-    if: false
     strategy:
       matrix:
         flutter-version:
