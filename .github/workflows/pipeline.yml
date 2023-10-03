@@ -57,7 +57,7 @@ jobs:
             avd-arch: x86
             avd-channel: canary
             avd-target: aosp_atd
-            flutter-version: 3.3.x
+            flutter-version: 3.0.0
     runs-on: macos-latest
 
     steps:
