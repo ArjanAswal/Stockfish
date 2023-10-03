@@ -2,55 +2,10 @@ on:
   push:
 
 jobs:
-  android_apk:
-    name: Android APKs
-    if: false
-    strategy:
-      matrix:
-        flutter-version:
-          - 3.x
-          - 3.0.0
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: flutter-action
-        uses: subosito/flutter-action@v2
-        with:
-          cache: true
-          flutter-version: ${{ matrix.flutter-version }}
-      - name: Cache pub get
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.PUB_CACHE }}
-          key: pub-cache-ubuntu-latest-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
-
-      - name: Setup Java 11
-        uses: actions/setup-java@v3
-        with:
-          cache: gradle
-          distribution: temurin
-          java-version: "11"
-
-      - run: flutter build apk --split-per-abi
-        working-directory: example
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: ${{ steps.flutter-action.outputs.VERSION }}-arm64-v8a
-          path: example/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-      - uses: actions/upload-artifact@v3
-        with:
-          name: ${{ steps.flutter-action.outputs.VERSION }}-armeabi-v7a
-          path: example/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-      - uses: actions/upload-artifact@v3
-        with:
-          name: ${{ steps.flutter-action.outputs.VERSION }}-x86_64
-          path: example/build/app/outputs/flutter-apk/app-x86_64-release.apk
-
   android_test:
     name: Android integration tests
     strategy:
+      fail-fast: false
       matrix:
         include:
           - avd-api-level: 31
@@ -58,7 +13,14 @@ jobs:
             avd-channel: stable
             avd-target: google_apis
             flutter-version: 3.0.0
-    runs-on: macos-latest
+            macos-version: macos-11
+          - avd-api-level: 31
+            avd-arch: x86_64
+            avd-channel: stable
+            avd-target: google_apis
+            flutter-version: 3.x
+            macos-version: macos-13
+    runs-on: ${{ matrix.macos-version }}
 
     steps:
       - uses: actions/checkout@v3
@@ -95,7 +57,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.api-level }}
+          key: avd-${{ matrix.avd-api-level }}
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
@@ -122,21 +84,15 @@ jobs:
 
   ios_test:
     name: iOS integration tests
-    if: false
+    continue-on-error: ${{ matrix.skip-tests }}
     strategy:
       matrix:
         include:
-          # oldest available macOS version on GitHub Actions with latest Flutter version
-          - flutter-version: 3.x
-            macos-version: macos-11
-            skip-tests: true # flakiness
-          # latest available macOS version on GitHub Actions with latest Flutter version
-          - flutter-version: 3.x
-            macos-version: macos-13
-          # oldest supported combination
           - flutter-version: 3.0.0
             macos-version: macos-11
             skip-tests: true # flakiness
+          - flutter-version: 3.x
+            macos-version: macos-13
     runs-on: ${{ matrix.macos-version }}
 
     steps:
@@ -151,7 +107,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.PUB_CACHE }}
-          key: pub-cache-${{ matrix.macos-version }}-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
+          key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
       - name: Cache CocoaPods
         uses: actions/cache@v3
         with:
@@ -159,6 +115,7 @@ jobs:
           key: example-ios-pods-${{ matrix.macos-version }}-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/ios/Podfile.lock') }}
 
       - name: Create iOS simulator
+        if: ${{ !matrix.skip-tests }}
         run: |
           set -e
           _runtime=$(xcrun simctl list runtimes ios -j | jq -r '.runtimes[-1]')
