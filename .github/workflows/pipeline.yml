@@ -53,18 +53,21 @@ jobs:
     strategy:
       matrix:
         include:
-          - avd-api-level: 29
+          - avd-api-level: 30
+            avd-arch: x86
+            avd-channel: canary
+            avd-target: aosp_atd
             flutter-version: 3.x
     runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v3
+
       - id: flutter-action
         uses: subosito/flutter-action@v2
         with:
           cache: true
           flutter-version: ${{ matrix.flutter-version }}
-
       - name: Cache pub get
         uses: actions/cache@v3
         with:
@@ -85,11 +88,36 @@ jobs:
           flutter build apk --debug --target=integration_test/app_test.dart
         working-directory: example
 
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.avd-api-level }}
+          arch: ${{ matrix.avd-arch }}
+          channel: ${{ matrix.avd-channel }}
+          target: ${{ matrix.avd-target }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
       - name: Execute integration test
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.avd-api-level }}
-          avd-name: stockfish
+          arch: ${{ matrix.avd-arch }}
+          channel: ${{ matrix.avd-channel }}
+          target: ${{ matrix.avd-target }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
           script: ./example/integration_test/execute.sh
 
   ios_test:
