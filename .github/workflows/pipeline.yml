@@ -1,8 +1,11 @@
 on:
   push:
 
+env:
+  SCRIPT: ./example/integration_test/execute.sh
+
 jobs:
-  android_test:
+  android:
     name: Android integration tests
     strategy:
       fail-fast: false
@@ -39,7 +42,7 @@ jobs:
         run: |
           set -e
 
-          # use Java 11
+          # use pre-installed Java 11
           export JAVA_HOME=$JAVA_HOME_11_X64
           echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
 
@@ -66,7 +69,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
-      - name: Execute integration test
+      - name: RUN ${{ env.SCRIPT }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.avd-api-level }}
@@ -76,9 +79,9 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./example/integration_test/execute.sh
+          script: ${{ env.SCRIPT }}
 
-  ios_test:
+  ios:
     name: iOS integration tests
     strategy:
       fail-fast: false
@@ -124,10 +127,8 @@ jobs:
 
           xcrun simctl create "$_deviceTypeName" "$_deviceTypeId" "$_runtimeId" | xargs xcrun simctl boot
 
-      # pre-build the app to (hopefully) speed up the test execution time,
-      # avoiding the `Test timed out after 12 minutes.` error.
-      # Apparently the timeout could not be configured, see https://github.com/flutter/flutter/issues/105913
+      # https://github.com/flutter/flutter/issues/105913
       - run: flutter build ios --simulator --target=integration_test/app_test.dart
         working-directory: example
 
-      - run: ./example/integration_test/execute.sh
+      - run: ${{ env.SCRIPT }}
