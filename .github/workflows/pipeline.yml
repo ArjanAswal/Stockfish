@@ -1,15 +1,26 @@
 on:
   push:
 
+env:
+  SCRIPT: ./example/integration_test/execute.sh
+
 jobs:
   android:
-    name: Android APKs
+    name: Android integration tests
     strategy:
+      fail-fast: false
       matrix:
-        flutter-version:
-          - 3.x
-          - 3.0.0
-    runs-on: ubuntu-latest
+        include:
+          - avd-api-level: 21
+            avd-target: google_apis
+            flutter-version: 3.0.0
+            macos-version: macos-11
+          - avd-api-level: 34
+            avd-target: google_apis
+            flutter-version: any
+            macos-version: macos-latest
+    runs-on: ${{ matrix.macos-version }}
+
     steps:
       - uses: actions/checkout@v3
 
@@ -22,47 +33,64 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.PUB_CACHE }}
-          key: pub-cache-ubuntu-latest-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
+          key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
 
-      - name: Setup Java 11
-        uses: actions/setup-java@v3
-        with:
-          cache: gradle
-          distribution: temurin
-          java-version: "11"
+      # pre-build the app to (hopefully) speed up the test execution time,
+      # avoiding the `Test timed out after 12 minutes.` error.
+      # Apparently the timeout could not be configured, see https://github.com/flutter/flutter/issues/105913
+      - name: Run flutter build apk
+        run: |
+          set -e
 
-      - run: flutter build apk --split-per-abi
+          # use pre-installed Java 11
+          export JAVA_HOME=$JAVA_HOME_11_X64
+          echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
+
+          flutter build apk --debug --target=integration_test/app_test.dart
         working-directory: example
 
-      - uses: actions/upload-artifact@v3
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
         with:
-          name: ${{ steps.flutter-action.outputs.VERSION }}-arm64-v8a
-          path: example/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-      - uses: actions/upload-artifact@v3
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.avd-api-level }}-${{ matrix.avd-target }}
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
         with:
-          name: ${{ steps.flutter-action.outputs.VERSION }}-armeabi-v7a
-          path: example/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-      - uses: actions/upload-artifact@v3
+          api-level: ${{ matrix.avd-api-level }}
+          arch: x86_64
+          disk-size: 2G
+          target: ${{ matrix.avd-target }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+      - name: RUN ${{ env.SCRIPT }}
+        uses: reactivecircus/android-emulator-runner@v2
         with:
-          name: ${{ steps.flutter-action.outputs.VERSION }}-x86_64
-          path: example/build/app/outputs/flutter-apk/app-x86_64-release.apk
+          api-level: ${{ matrix.avd-api-level }}
+          arch: x86_64
+          disk-size: 2G
+          target: ${{ matrix.avd-target }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ${{ env.SCRIPT }}
 
   ios:
     name: iOS integration tests
     strategy:
+      fail-fast: false
       matrix:
         include:
-          # oldest available macOS version on GitHub Actions with latest Flutter version
-          - flutter-version: 3.x
-            macos-version: macos-11
-            skip-tests: true # flakiness
-          # latest available macOS version on GitHub Actions with latest Flutter version
-          - flutter-version: 3.x
-            macos-version: macos-12
-          # oldest supported combination
           - flutter-version: 3.0.0
             macos-version: macos-11
-            skip-tests: true # flakiness
+          - flutter-version: any
+            macos-version: macos-latest
     runs-on: ${{ matrix.macos-version }}
 
     steps:
@@ -77,7 +105,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.PUB_CACHE }}
-          key: pub-cache-${{ matrix.macos-version }}-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
+          key: pub-cache-${{ steps.flutter-action.outputs.VERSION }}-${{ hashFiles('example/pubspec.lock') }}
       - name: Cache CocoaPods
         uses: actions/cache@v3
         with:
@@ -99,11 +127,8 @@ jobs:
 
           xcrun simctl create "$_deviceTypeName" "$_deviceTypeId" "$_runtimeId" | xargs xcrun simctl boot
 
-      # pre-build the app to (hopefully) speed up the test execution time,
-      # avoiding the `Test timed out after 12 minutes.` error.
-      # Apparently the timeout could not be configured, see https://github.com/flutter/flutter/issues/105913
+      # https://github.com/flutter/flutter/issues/105913
       - run: flutter build ios --simulator --target=integration_test/app_test.dart
         working-directory: example
 
-      - run: ./example/integration_test/execute.sh
-        if: ${{ !matrix.skip-tests }}
+      - run: ${{ env.SCRIPT }}
