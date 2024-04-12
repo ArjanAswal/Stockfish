@@ -14,4 +14,5 @@ else()
   target_compile_options(stockfish PRIVATE -DUSE_PTHREADS -DNDEBUG -O3)
 endif()
 
-file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-ad9b42354671.nnue ${CMAKE_BINARY_DIR}/nn-ad9b42354671.nnue)
+file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-b1a57edbea57.nnue ${CMAKE_BINARY_DIR}/nn-b1a57edbea57.nnue)
+file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-baff1ede1f90.nnue ${CMAKE_BINARY_DIR}/nn-baff1ede1f90.nnue)

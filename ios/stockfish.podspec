@@ -19,23 +19,30 @@ Pod::Spec.new do |s|
   s.public_header_files = 'Classes/**/*.h'
   s.exclude_files = 'Stockfish/src/incbin/UNLICENCE'
   s.dependency 'Flutter'
-  s.platform = :ios, '11.0'
-  s.ios.deployment_target  = '11.0'
+  s.platform = :ios, '12.0'
+  s.ios.deployment_target  = '12.0'
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
 
   # Additional compiler configuration required for Stockfish
   s.library = 'c++'
-  s.script_phase = {
-    :execution_position => :before_compile,
-    :name => 'Download nnue',
-    :script => "[ -e 'nn-ad9b42354671.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-ad9b42354671.nnue'"
-  }
+  s.script_phases = [
+    {
+      :execution_position => :before_compile,
+      :name => 'Download big nnue',
+      :script => "[ -e 'nn-b1a57edbea57.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-b1a57edbea57.nnue'"
+    },
+    {
+      :execution_position => :before_compile,
+      :name => 'Download small nnue',
+      :script => "[ -e 'nn-baff1ede1f90.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-baff1ede1f90.nnue'"
+    },
+  ]
   s.xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     'CLANG_CXX_LIBRARY' => 'libc++',
-    'OTHER_CPLUSPLUSFLAGS' => '$(inherited) -fno-exceptions -std=c++17 -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -flto=thin',
-    'OTHER_LDFLAGS' => '$(inherited) -fno-exceptions -std=c++17 -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -flto=thin'
+    'OTHER_CPLUSPLUSFLAGS' => '$(inherited) -fno-exceptions -std=c++17 -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -DUSE_NEON=8 -DUSE_NEON_DOTPROD -flto=thin',
+    'OTHER_LDFLAGS' => '$(inherited) -fno-exceptions -std=c++17 -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -DUSE_NEON=8 -DUSE_NEON_DOTPROD -flto=thin'
   }
 end
