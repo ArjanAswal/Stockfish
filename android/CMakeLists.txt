@@ -9,7 +9,7 @@ add_library(
 )
 
 if(ANDROID_ABI STREQUAL arm64-v8a)
-  target_compile_options(stockfish PRIVATE -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -DUSE_NEON)
+  target_compile_options(stockfish PRIVATE -DUSE_PTHREADS -DNDEBUG -O3 -DIS_64BIT -DUSE_POPCNT -DUSE_NEON=8)
 else()
   target_compile_options(stockfish PRIVATE -DUSE_PTHREADS -DNDEBUG -O3)
 endif()
