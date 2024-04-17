@@ -39,3 +39,7 @@
 ## [1.4.0] - 8 June 2023
 
 * Bug fixes and improvements
+
+## [1.5.0] - 17 April 2024
+
+* Update to Stockfish 16.1
