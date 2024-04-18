@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2024 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2023 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -18,17 +18,18 @@
 
 #include "benchmark.h"
 
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <istream>
 #include <vector>
 
 #include "position.h"
 
+using namespace std;
+
 namespace {
 
-// clang-format off
-const std::vector<std::string> Defaults = {
+const vector<string> Defaults = {
   "setoption name UCI_Chess960 value false",
   "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
   "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 10",
@@ -91,75 +92,86 @@ const std::vector<std::string> Defaults = {
   "nqbnrkrb/pppppppp/8/8/8/8/PPPPPPPP/NQBNRKRB w KQkq - 0 1",
   "setoption name UCI_Chess960 value false"
 };
-// clang-format on
 
-}  // namespace
+} // namespace
 
 namespace Stockfish {
 
-// Builds a list of UCI commands to be run by bench. There
-// are five parameters: TT size in MB, number of search threads that
-// should be used, the limit value spent for each position, a file name
-// where to look for positions in FEN format, and the type of the limit:
-// depth, perft, nodes and movetime (in milliseconds). Examples:
-//
-// bench                            : search default positions up to depth 13
-// bench 64 1 15                    : search default positions up to depth 15 (TT = 64MB)
-// bench 64 1 100000 default nodes  : search default positions for 100K nodes each
-// bench 64 4 5000 current movetime : search current position with 4 threads for 5 sec
-// bench 16 1 5 blah perft          : run a perft 5 on positions in file "blah"
-std::vector<std::string> setup_bench(const Position& current, std::istream& is) {
+/// setup_bench() builds a list of UCI commands to be run by bench. There
+/// are five parameters: TT size in MB, number of search threads that
+/// should be used, the limit value spent for each position, a file name
+/// where to look for positions in FEN format, the type of the limit:
+/// depth, perft, nodes and movetime (in millisecs), and evaluation type
+/// mixed (default), classical, NNUE.
+///
+/// bench -> search default positions up to depth 13
+/// bench 64 1 15 -> search default positions up to depth 15 (TT = 64MB)
+/// bench 64 4 5000 current movetime -> search current position with 4 threads for 5 sec
+/// bench 64 1 100000 default nodes -> search default positions for 100K nodes each
+/// bench 16 1 5 default perft -> run a perft 5 on default positions
 
-    std::vector<std::string> fens, list;
-    std::string              go, token;
+vector<string> setup_bench(const Position& current, istream& is) {
 
-    // Assign default values to missing arguments
-    std::string ttSize    = (is >> token) ? token : "16";
-    std::string threads   = (is >> token) ? token : "1";
-    std::string limit     = (is >> token) ? token : "13";
-    std::string fenFile   = (is >> token) ? token : "default";
-    std::string limitType = (is >> token) ? token : "depth";
+  vector<string> fens, list;
+  string go, token;
 
-    go = limitType == "eval" ? "eval" : "go " + limitType + " " + limit;
+  // Assign default values to missing arguments
+  string ttSize    = (is >> token) ? token : "16";
+  string threads   = (is >> token) ? token : "1";
+  string limit     = (is >> token) ? token : "13";
+  string fenFile   = (is >> token) ? token : "default";
+  string limitType = (is >> token) ? token : "depth";
+  string evalType  = (is >> token) ? token : "mixed";
 
-    if (fenFile == "default")
-        fens = Defaults;
+  go = limitType == "eval" ? "eval" : "go " + limitType + " " + limit;
 
-    else if (fenFile == "current")
-        fens.push_back(current.fen());
+  if (fenFile == "default")
+      fens = Defaults;
 
-    else
-    {
-        std::string   fen;
-        std::ifstream file(fenFile);
+  else if (fenFile == "current")
+      fens.push_back(current.fen());
 
-        if (!file.is_open())
-        {
-            std::cerr << "Unable to open file " << fenFile << std::endl;
-            exit(EXIT_FAILURE);
-        }
+  else
+  {
+      string fen;
+      ifstream file(fenFile);
 
-        while (getline(file, fen))
-            if (!fen.empty())
-                fens.push_back(fen);
+      if (!file.is_open())
+      {
+          cerr << "Unable to open file " << fenFile << endl;
+          exit(EXIT_FAILURE);
+      }
 
-        file.close();
-    }
+      while (getline(file, fen))
+          if (!fen.empty())
+              fens.push_back(fen);
 
-    list.emplace_back("setoption name Threads value " + threads);
-    list.emplace_back("setoption name Hash value " + ttSize);
-    list.emplace_back("ucinewgame");
+      file.close();
+  }
 
-    for (const std::string& fen : fens)
-        if (fen.find("setoption") != std::string::npos)
-            list.emplace_back(fen);
-        else
-        {
-            list.emplace_back("position fen " + fen);
-            list.emplace_back(go);
-        }
+  list.emplace_back("setoption name Threads value " + threads);
+  list.emplace_back("setoption name Hash value " + ttSize);
+  list.emplace_back("ucinewgame");
 
-    return list;
+  size_t posCounter = 0;
+
+  for (const string& fen : fens)
+      if (fen.find("setoption") != string::npos)
+          list.emplace_back(fen);
+      else
+      {
+          if (evalType == "classical" || (evalType == "mixed" && posCounter % 2 == 0))
+              list.emplace_back("setoption name Use NNUE value false");
+          else if (evalType == "NNUE" || (evalType == "mixed" && posCounter % 2 != 0))
+              list.emplace_back("setoption name Use NNUE value true");
+          list.emplace_back("position fen " + fen);
+          list.emplace_back(go);
+          ++posCounter;
+      }
+
+  list.emplace_back("setoption name Use NNUE value true");
+
+  return list;
 }
 
-}  // namespace Stockfish
+} // namespace Stockfish
