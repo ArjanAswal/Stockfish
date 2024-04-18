@@ -2,7 +2,7 @@ PODS:
   - Flutter (1.0.0)
   - integration_test (0.0.1):
     - Flutter
-  - stockfish (1.5.0):
+  - stockfish (1.6.0):
     - Flutter
 
 DEPENDENCIES:
@@ -21,7 +21,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   integration_test: ce0a3ffa1de96d1a89ca0ac26fca7ea18a749ef4
-  stockfish: 80305fc9188c45cc1365957bb19b96c8b4c8727f
+  stockfish: 1cee686b12e2541a977d062746d2eb3f794d891c
 
 PODFILE CHECKSUM: c4c93c5f6502fe2754f48404d3594bf779584011
 
