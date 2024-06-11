@@ -1,14 +1,15 @@
 #include <iostream>
-#include <unordered_map>
 #include <stdio.h>
 #include <unistd.h>
 
 #include "../Stockfish/src/bitboard.h"
-#include "../Stockfish/src/evaluate.h"
-#include "../Stockfish/src/misc.h"
+#include "../Stockfish/src/endgame.h"
 #include "../Stockfish/src/position.h"
-#include "../Stockfish/src/tune.h"
-#include "../Stockfish/src/types.h"
+#include "../Stockfish/src/psqt.h"
+#include "../Stockfish/src/search.h"
+#include "../Stockfish/src/syzygy/tbprobe.h"
+#include "../Stockfish/src/thread.h"
+#include "../Stockfish/src/tt.h"
 #include "../Stockfish/src/uci.h"
 
 #include "ffi.h"
