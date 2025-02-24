@@ -47,3 +47,7 @@
 ## [1.6.0] - 18 April 2024
 
 * Switch to Stockfish 16 for smaller app size
+
+## [1.7.0] - 24 February 2025
+
+* Update to Stockfish 17
