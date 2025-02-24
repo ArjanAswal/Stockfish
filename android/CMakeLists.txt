@@ -22,4 +22,4 @@ else()
   endif()
 endif()
 
-file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-5af11540bbfe.nnue ${CMAKE_BINARY_DIR}/nn-5af11540bbfe.nnue)
+file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-1111cefa1111.nnue ${CMAKE_BINARY_DIR}/nn-1111cefa1111.nnue)

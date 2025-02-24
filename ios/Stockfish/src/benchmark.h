@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2023 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2024 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,12 +23,10 @@
 #include <string>
 #include <vector>
 
-namespace Stockfish {
+namespace Stockfish::Benchmark {
 
-class Position;
+std::vector<std::string> setup_bench(const std::string&, std::istream&);
 
-std::vector<std::string> setup_bench(const Position&, std::istream&);
+}  // namespace Stockfish
 
-} // namespace Stockfish
-
-#endif // #ifndef BENCHMARK_H_INCLUDED
+#endif  // #ifndef BENCHMARK_H_INCLUDED
