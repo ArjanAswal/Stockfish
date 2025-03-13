@@ -27,11 +27,18 @@ Pod::Spec.new do |s|
 
   # Additional compiler configuration required for Stockfish
   s.library = 'c++'
-  s.script_phase = {
-    :execution_position => :before_compile,
-    :name => 'Download nnue',
-    :script => "[ -e 'nn-1111cefa1111.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-1111cefa1111.nnue'"
-  }
+  s.script_phase = [
+    {
+      :execution_position => :before_compile,
+      :name => 'Download nnue',
+      :script => "[ -e 'nn-1111cefa1111.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-1111cefa1111.nnue'"
+    },
+    {
+      :execution_position => :before_compile,
+      :name => 'Download small nnue',
+      :script => "[ -e 'nn-37f18f62d772.nnue' ] || curl --location --remote-name 'https://tests.stockfishchess.org/api/nn/nn-37f18f62d772.nnue'"
+    },
+  ]
   s.xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     'CLANG_CXX_LIBRARY' => 'libc++',
