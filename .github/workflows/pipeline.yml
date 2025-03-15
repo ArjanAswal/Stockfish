@@ -1,5 +1,9 @@
 on:
-  push:
+  pull_request:
+    types:
+      - opened
+  workflow_dispatch:
+
 
 env:
   SCRIPT: ./example/integration_test/execute.sh
