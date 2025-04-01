@@ -51,3 +51,7 @@
 ## [1.7.0] - 24 February 2025
 
 * Update to Stockfish 17
+
+## [1.7.1] - 18 March 2025
+
+* Fix Stockfish 17 release
