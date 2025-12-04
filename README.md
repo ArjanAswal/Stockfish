@@ -4,9 +4,18 @@
 
 The Stockfish Chess Engine for Flutter.
 
+[The Leela Chess Zero (lc0)](https://pub.dev/packages/leela_chess_zero) neural network chess engine for flutter is coming soon...
+
+## Architecture
+
+This package wraps the **Stockfish chess engine** (C++) for use in Flutter applications on Android and iOS. It uses **Dart FFI (Foreign Function Interface)** to communicate between Dart and native C++ code.
+For more information go to [architecture.md](architecture.md).
+
 ## Example
 
-[@PScottZero](https://github.com/PScottZero) was kind enough to create a [working chess game](https://github.com/PScottZero/EnPassant/tree/stockfish) using this package.
+Check out this [working chess game](https://github.com/PScottZero/EnPassant/tree/stockfish) using this package by [@PScottZero](https://github.com/PScottZero).
+
+Also see the [example](example) folder for a minimal Flutter app demonstrating usage.
 
 ## Usages
 
