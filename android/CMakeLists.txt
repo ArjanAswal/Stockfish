@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.4.1)
 
+# Enable 16KB page size support for Android (required for Google Play)
+add_link_options(-Wl,-z,max-page-size=16384)
+add_link_options(-Wl,-z,common-page-size=16384)
+
 file(GLOB_RECURSE cppPaths "../ios/Stockfish/src/*.cpp")
 add_library(
   stockfish
