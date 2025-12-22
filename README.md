@@ -4,7 +4,7 @@
 
 The Stockfish Chess Engine for Flutter.
 
-[The Leela Chess Zero (lc0)](https://pub.dev/packages/leela_chess_zero) neural network chess engine for flutter is coming soon...
+Also check out [The Leela Chess Zero (lc0)](https://pub.dev/packages/leela_chess_zero) neural network chess engine for flutter.
 
 ## Architecture
 
