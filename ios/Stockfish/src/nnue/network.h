@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2024 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2026 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -19,20 +19,27 @@
 #ifndef NETWORK_H_INCLUDED
 #define NETWORK_H_INCLUDED
 
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <tuple>
-#include <utility>
 
-#include "../memory.h"
-#include "../position.h"
+#include "../misc.h"
 #include "../types.h"
 #include "nnue_accumulator.h"
 #include "nnue_architecture.h"
+#include "nnue_common.h"
 #include "nnue_feature_transformer.h"
 #include "nnue_misc.h"
+
+namespace Stockfish {
+class Position;
+}
 
 namespace Stockfish::Eval::NNUE {
 
@@ -43,6 +50,9 @@ enum class EmbeddedNNUEType {
 
 using NetworkOutput = std::tuple<Value, Value>;
 
+// The network must be a trivial type, i.e. the memory must be in-line.
+// This is required to allow sharing the network via shared memory, as
+// there is no way to run destructors.
 template<typename Arch, typename Transformer>
 class Network {
     static constexpr IndexType FTDimensions = Arch::TransformedFeatureDimensions;
@@ -52,25 +62,26 @@ class Network {
         evalFile(file),
         embeddedType(type) {}
 
-    Network(const Network& other);
-    Network(Network&& other) = default;
+    Network(const Network& other) = default;
+    Network(Network&& other)      = default;
 
-    Network& operator=(const Network& other);
-    Network& operator=(Network&& other) = default;
+    Network& operator=(const Network& other) = default;
+    Network& operator=(Network&& other)      = default;
 
     void load(const std::string& rootDirectory, std::string evalfilePath);
     bool save(const std::optional<std::string>& filename) const;
 
+    std::size_t get_content_hash() const;
+
     NetworkOutput evaluate(const Position&                         pos,
-                           AccumulatorCaches::Cache<FTDimensions>* cache) const;
+                           AccumulatorStack&                       accumulatorStack,
+                           AccumulatorCaches::Cache<FTDimensions>& cache) const;
 
 
-    void hint_common_access(const Position&                         pos,
-                            AccumulatorCaches::Cache<FTDimensions>* cache) const;
-
-    void          verify(std::string evalfilePath) const;
+    void verify(std::string evalfilePath, const std::function<void(std::string_view)>&) const;
     NnueEvalTrace trace_evaluate(const Position&                         pos,
-                                 AccumulatorCaches::Cache<FTDimensions>* cache) const;
+                                 AccumulatorStack&                       accumulatorStack,
+                                 AccumulatorCaches::Cache<FTDimensions>& cache) const;
 
    private:
     void load_user_net(const std::string&, const std::string&);
@@ -84,17 +95,19 @@ class Network {
     bool read_header(std::istream&, std::uint32_t*, std::string*) const;
     bool write_header(std::ostream&, std::uint32_t, const std::string&) const;
 
-    bool read_parameters(std::istream&, std::string&) const;
+    bool read_parameters(std::istream&, std::string&);
     bool write_parameters(std::ostream&, const std::string&) const;
 
     // Input feature converter
-    LargePagePtr<Transformer> featureTransformer;
+    Transformer featureTransformer;
 
     // Evaluation function
-    AlignedPtr<Arch[]> network;
+    Arch network[LayerStacks];
 
     EvalFile         evalFile;
     EmbeddedNNUEType embeddedType;
+
+    bool initialized = false;
 
     // Hash value of evaluation function structure
     static constexpr std::uint32_t hash = Transformer::get_hash_value() ^ Arch::get_hash_value();
@@ -104,13 +117,11 @@ class Network {
 };
 
 // Definitions of the network types
-using SmallFeatureTransformer =
-  FeatureTransformer<TransformedFeatureDimensionsSmall, &StateInfo::accumulatorSmall>;
+using SmallFeatureTransformer = FeatureTransformer<TransformedFeatureDimensionsSmall>;
 using SmallNetworkArchitecture =
   NetworkArchitecture<TransformedFeatureDimensionsSmall, L2Small, L3Small>;
 
-using BigFeatureTransformer =
-  FeatureTransformer<TransformedFeatureDimensionsBig, &StateInfo::accumulatorBig>;
+using BigFeatureTransformer  = FeatureTransformer<TransformedFeatureDimensionsBig>;
 using BigNetworkArchitecture = NetworkArchitecture<TransformedFeatureDimensionsBig, L2Big, L3Big>;
 
 using NetworkBig   = Network<BigNetworkArchitecture, BigFeatureTransformer>;
@@ -118,9 +129,9 @@ using NetworkSmall = Network<SmallNetworkArchitecture, SmallFeatureTransformer>;
 
 
 struct Networks {
-    Networks(NetworkBig&& nB, NetworkSmall&& nS) :
-        big(std::move(nB)),
-        small(std::move(nS)) {}
+    Networks(EvalFile bigFile, EvalFile smallFile) :
+        big(bigFile, EmbeddedNNUEType::BIG),
+        small(smallFile, EmbeddedNNUEType::SMALL) {}
 
     NetworkBig   big;
     NetworkSmall small;
@@ -128,5 +139,23 @@ struct Networks {
 
 
 }  // namespace Stockfish
+
+template<typename ArchT, typename FeatureTransformerT>
+struct std::hash<Stockfish::Eval::NNUE::Network<ArchT, FeatureTransformerT>> {
+    std::size_t operator()(
+      const Stockfish::Eval::NNUE::Network<ArchT, FeatureTransformerT>& network) const noexcept {
+        return network.get_content_hash();
+    }
+};
+
+template<>
+struct std::hash<Stockfish::Eval::NNUE::Networks> {
+    std::size_t operator()(const Stockfish::Eval::NNUE::Networks& networks) const noexcept {
+        std::size_t h = 0;
+        Stockfish::hash_combine(h, networks.big);
+        Stockfish::hash_combine(h, networks.small);
+        return h;
+    }
+};
 
 #endif

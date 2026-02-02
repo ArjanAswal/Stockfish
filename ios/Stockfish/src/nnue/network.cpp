@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2024 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2026 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,14 +21,14 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <memory>
 #include <optional>
 #include <type_traits>
 #include <vector>
 
-#include "../evaluate.h"
+#define INCBIN_SILENCE_BITCODE_WARNING
 #include "../incbin/incbin.h"
-#include "../memory.h"
+
+#include "../evaluate.h"
 #include "../misc.h"
 #include "../position.h"
 #include "../types.h"
@@ -36,7 +36,6 @@
 #include "nnue_common.h"
 #include "nnue_misc.h"
 
-namespace {
 // Macro to embed the default efficiently updatable neural network (NNUE) file
 // data in the engine binary (using incbin.h, by Dale Weiler).
 // This macro invocation will declare the following three variables
@@ -55,6 +54,8 @@ const unsigned char        gEmbeddedNNUESmallData[1] = {0x0};
 const unsigned char* const gEmbeddedNNUESmallEnd     = &gEmbeddedNNUESmallData[1];
 const unsigned int         gEmbeddedNNUESmallSize    = 1;
 #endif
+
+namespace {
 
 struct EmbeddedNNUE {
     EmbeddedNNUE(const unsigned char* embeddedData,
@@ -107,43 +108,6 @@ bool write_parameters(std::ostream& stream, const T& reference) {
 }  // namespace Detail
 
 template<typename Arch, typename Transformer>
-Network<Arch, Transformer>::Network(const Network<Arch, Transformer>& other) :
-    evalFile(other.evalFile),
-    embeddedType(other.embeddedType) {
-
-    if (other.featureTransformer)
-        featureTransformer = make_unique_large_page<Transformer>(*other.featureTransformer);
-
-    network = make_unique_aligned<Arch[]>(LayerStacks);
-
-    if (!other.network)
-        return;
-
-    for (std::size_t i = 0; i < LayerStacks; ++i)
-        network[i] = other.network[i];
-}
-
-template<typename Arch, typename Transformer>
-Network<Arch, Transformer>&
-Network<Arch, Transformer>::operator=(const Network<Arch, Transformer>& other) {
-    evalFile     = other.evalFile;
-    embeddedType = other.embeddedType;
-
-    if (other.featureTransformer)
-        featureTransformer = make_unique_large_page<Transformer>(*other.featureTransformer);
-
-    network = make_unique_aligned<Arch[]>(LayerStacks);
-
-    if (!other.network)
-        return *this;
-
-    for (std::size_t i = 0; i < LayerStacks; ++i)
-        network[i] = other.network[i];
-
-    return *this;
-}
-
-template<typename Arch, typename Transformer>
 void Network<Arch, Transformer>::load(const std::string& rootDirectory, std::string evalfilePath) {
 #if defined(DEFAULT_NNUE_DIRECTORY)
     std::vector<std::string> dirs = {"<internal>", "", rootDirectory,
@@ -157,14 +121,14 @@ void Network<Arch, Transformer>::load(const std::string& rootDirectory, std::str
 
     for (const auto& directory : dirs)
     {
-        if (evalFile.current != evalfilePath)
+        if (std::string(evalFile.current) != evalfilePath)
         {
             if (directory != "<internal>")
             {
                 load_user_net(directory, evalfilePath);
             }
 
-            if (directory == "<internal>" && evalfilePath == evalFile.defaultName)
+            if (directory == "<internal>" && evalfilePath == std::string(evalFile.defaultName))
             {
                 load_internal();
             }
@@ -182,7 +146,7 @@ bool Network<Arch, Transformer>::save(const std::optional<std::string>& filename
         actualFilename = filename.value();
     else
     {
-        if (evalFile.current != evalFile.defaultName)
+        if (std::string(evalFile.current) != std::string(evalFile.defaultName))
         {
             msg = "Failed to export a net. "
                   "A non-embedded net can only be saved if the filename is specified";
@@ -207,89 +171,75 @@ bool Network<Arch, Transformer>::save(const std::optional<std::string>& filename
 template<typename Arch, typename Transformer>
 NetworkOutput
 Network<Arch, Transformer>::evaluate(const Position&                         pos,
-                                     AccumulatorCaches::Cache<FTDimensions>* cache) const {
-    // We manually align the arrays on the stack because with gcc < 9.3
-    // overaligning stack variables with alignas() doesn't work correctly.
+                                     AccumulatorStack&                       accumulatorStack,
+                                     AccumulatorCaches::Cache<FTDimensions>& cache) const {
 
     constexpr uint64_t alignment = CacheLineSize;
 
-#if defined(ALIGNAS_ON_STACK_VARIABLES_BROKEN)
-    TransformedFeatureType
-      transformedFeaturesUnaligned[FeatureTransformer<FTDimensions, nullptr>::BufferSize
-                                   + alignment / sizeof(TransformedFeatureType)];
-
-    auto* transformedFeatures = align_ptr_up<alignment>(&transformedFeaturesUnaligned[0]);
-#else
-    alignas(alignment) TransformedFeatureType
-      transformedFeatures[FeatureTransformer<FTDimensions, nullptr>::BufferSize];
-#endif
+    alignas(alignment)
+      TransformedFeatureType transformedFeatures[FeatureTransformer<FTDimensions>::BufferSize];
 
     ASSERT_ALIGNED(transformedFeatures, alignment);
 
-    const int  bucket     = (pos.count<ALL_PIECES>() - 1) / 4;
-    const auto psqt       = featureTransformer->transform(pos, cache, transformedFeatures, bucket);
+    const int  bucket = (pos.count<ALL_PIECES>() - 1) / 4;
+    const auto psqt =
+      featureTransformer.transform(pos, accumulatorStack, cache, transformedFeatures, bucket);
     const auto positional = network[bucket].propagate(transformedFeatures);
     return {static_cast<Value>(psqt / OutputScale), static_cast<Value>(positional / OutputScale)};
 }
 
 
 template<typename Arch, typename Transformer>
-void Network<Arch, Transformer>::verify(std::string evalfilePath) const {
+void Network<Arch, Transformer>::verify(std::string                                  evalfilePath,
+                                        const std::function<void(std::string_view)>& f) const {
     if (evalfilePath.empty())
         evalfilePath = evalFile.defaultName;
 
-    if (evalFile.current != evalfilePath)
+    if (std::string(evalFile.current) != evalfilePath)
     {
-        std::string msg1 =
-          "Network evaluation parameters compatible with the engine must be available.";
-        std::string msg2 = "The network file " + evalfilePath + " was not loaded successfully.";
-        std::string msg3 = "The UCI option EvalFile might need to specify the full path, "
-                           "including the directory name, to the network file.";
-        std::string msg4 = "The default net can be downloaded from: "
-                           "https://tests.stockfishchess.org/api/nn/"
-                         + evalFile.defaultName;
-        std::string msg5 = "The engine will be terminated now.";
+        if (f)
+        {
+            std::string msg1 =
+              "Network evaluation parameters compatible with the engine must be available.";
+            std::string msg2 = "The network file " + evalfilePath + " was not loaded successfully.";
+            std::string msg3 = "The UCI option EvalFile might need to specify the full path, "
+                               "including the directory name, to the network file.";
+            std::string msg4 = "The default net can be downloaded from: "
+                               "https://tests.stockfishchess.org/api/nn/"
+                             + std::string(evalFile.defaultName);
+            std::string msg5 = "The engine will be terminated now.";
 
-        sync_cout << "info string ERROR: " << msg1 << sync_endl;
-        sync_cout << "info string ERROR: " << msg2 << sync_endl;
-        sync_cout << "info string ERROR: " << msg3 << sync_endl;
-        sync_cout << "info string ERROR: " << msg4 << sync_endl;
-        sync_cout << "info string ERROR: " << msg5 << sync_endl;
+            std::string msg = "ERROR: " + msg1 + '\n' + "ERROR: " + msg2 + '\n' + "ERROR: " + msg3
+                            + '\n' + "ERROR: " + msg4 + '\n' + "ERROR: " + msg5 + '\n';
+
+            f(msg);
+        }
+
         exit(EXIT_FAILURE);
     }
 
-    size_t size = sizeof(*featureTransformer) + sizeof(Arch) * LayerStacks;
-    sync_cout << "info string NNUE evaluation using " << evalfilePath << " ("
-              << size / (1024 * 1024) << "MiB, (" << featureTransformer->InputDimensions << ", "
-              << network[0].TransformedFeatureDimensions << ", " << network[0].FC_0_OUTPUTS << ", "
-              << network[0].FC_1_OUTPUTS << ", 1))" << sync_endl;
+    if (f)
+    {
+        size_t size = sizeof(featureTransformer) + sizeof(Arch) * LayerStacks;
+        f("NNUE evaluation using " + evalfilePath + " (" + std::to_string(size / (1024 * 1024))
+          + "MiB, (" + std::to_string(featureTransformer.TotalInputDimensions) + ", "
+          + std::to_string(network[0].TransformedFeatureDimensions) + ", "
+          + std::to_string(network[0].FC_0_OUTPUTS) + ", " + std::to_string(network[0].FC_1_OUTPUTS)
+          + ", 1))");
+    }
 }
 
-
-template<typename Arch, typename Transformer>
-void Network<Arch, Transformer>::hint_common_access(
-  const Position& pos, AccumulatorCaches::Cache<FTDimensions>* cache) const {
-    featureTransformer->hint_common_access(pos, cache);
-}
 
 template<typename Arch, typename Transformer>
 NnueEvalTrace
 Network<Arch, Transformer>::trace_evaluate(const Position&                         pos,
-                                           AccumulatorCaches::Cache<FTDimensions>* cache) const {
-    // We manually align the arrays on the stack because with gcc < 9.3
-    // overaligning stack variables with alignas() doesn't work correctly.
+                                           AccumulatorStack&                       accumulatorStack,
+                                           AccumulatorCaches::Cache<FTDimensions>& cache) const {
+
     constexpr uint64_t alignment = CacheLineSize;
 
-#if defined(ALIGNAS_ON_STACK_VARIABLES_BROKEN)
-    TransformedFeatureType
-      transformedFeaturesUnaligned[FeatureTransformer<FTDimensions, nullptr>::BufferSize
-                                   + alignment / sizeof(TransformedFeatureType)];
-
-    auto* transformedFeatures = align_ptr_up<alignment>(&transformedFeaturesUnaligned[0]);
-#else
-    alignas(alignment) TransformedFeatureType
-      transformedFeatures[FeatureTransformer<FTDimensions, nullptr>::BufferSize];
-#endif
+    alignas(alignment)
+      TransformedFeatureType transformedFeatures[FeatureTransformer<FTDimensions>::BufferSize];
 
     ASSERT_ALIGNED(transformedFeatures, alignment);
 
@@ -298,7 +248,7 @@ Network<Arch, Transformer>::trace_evaluate(const Position&                      
     for (IndexType bucket = 0; bucket < LayerStacks; ++bucket)
     {
         const auto materialist =
-          featureTransformer->transform(pos, cache, transformedFeatures, bucket);
+          featureTransformer.transform(pos, accumulatorStack, cache, transformedFeatures, bucket);
         const auto positional = network[bucket].propagate(transformedFeatures);
 
         t.psqt[bucket]       = static_cast<Value>(materialist / OutputScale);
@@ -352,8 +302,7 @@ void Network<Arch, Transformer>::load_internal() {
 
 template<typename Arch, typename Transformer>
 void Network<Arch, Transformer>::initialize() {
-    featureTransformer = make_unique_large_page<Transformer>();
-    network            = make_unique_aligned<Arch[]>(LayerStacks);
+    initialized = true;
 }
 
 
@@ -376,6 +325,20 @@ std::optional<std::string> Network<Arch, Transformer>::load(std::istream& stream
     return read_parameters(stream, description) ? std::make_optional(description) : std::nullopt;
 }
 
+
+template<typename Arch, typename Transformer>
+std::size_t Network<Arch, Transformer>::get_content_hash() const {
+    if (!initialized)
+        return 0;
+
+    std::size_t h = 0;
+    hash_combine(h, featureTransformer);
+    for (auto&& layerstack : network)
+        hash_combine(h, layerstack);
+    hash_combine(h, evalFile);
+    hash_combine(h, static_cast<int>(embeddedType));
+    return h;
+}
 
 // Read network header
 template<typename Arch, typename Transformer>
@@ -410,13 +373,13 @@ bool Network<Arch, Transformer>::write_header(std::ostream&      stream,
 
 template<typename Arch, typename Transformer>
 bool Network<Arch, Transformer>::read_parameters(std::istream& stream,
-                                                 std::string&  netDescription) const {
+                                                 std::string&  netDescription) {
     std::uint32_t hashValue;
     if (!read_header(stream, &hashValue, &netDescription))
         return false;
     if (hashValue != Network::hash)
         return false;
-    if (!Detail::read_parameters(stream, *featureTransformer))
+    if (!Detail::read_parameters(stream, featureTransformer))
         return false;
     for (std::size_t i = 0; i < LayerStacks; ++i)
     {
@@ -432,7 +395,7 @@ bool Network<Arch, Transformer>::write_parameters(std::ostream&      stream,
                                                   const std::string& netDescription) const {
     if (!write_header(stream, Network::hash, netDescription))
         return false;
-    if (!Detail::write_parameters(stream, *featureTransformer))
+    if (!Detail::write_parameters(stream, featureTransformer))
         return false;
     for (std::size_t i = 0; i < LayerStacks; ++i)
     {
@@ -442,14 +405,12 @@ bool Network<Arch, Transformer>::write_parameters(std::ostream&      stream,
     return bool(stream);
 }
 
-// Explicit template instantiation
+// Explicit template instantiations
 
-template class Network<
-  NetworkArchitecture<TransformedFeatureDimensionsBig, L2Big, L3Big>,
-  FeatureTransformer<TransformedFeatureDimensionsBig, &StateInfo::accumulatorBig>>;
+template class Network<NetworkArchitecture<TransformedFeatureDimensionsBig, L2Big, L3Big>,
+                       FeatureTransformer<TransformedFeatureDimensionsBig>>;
 
-template class Network<
-  NetworkArchitecture<TransformedFeatureDimensionsSmall, L2Small, L3Small>,
-  FeatureTransformer<TransformedFeatureDimensionsSmall, &StateInfo::accumulatorSmall>>;
+template class Network<NetworkArchitecture<TransformedFeatureDimensionsSmall, L2Small, L3Small>,
+                       FeatureTransformer<TransformedFeatureDimensionsSmall>>;
 
 }  // namespace Stockfish::Eval::NNUE

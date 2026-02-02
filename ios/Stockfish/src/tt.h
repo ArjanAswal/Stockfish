@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2024 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2026 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -51,6 +51,18 @@ struct TTData {
     Depth depth;
     Bound bound;
     bool  is_pv;
+
+    TTData() = delete;
+
+    // clang-format off
+    TTData(Move m, Value v, Value ev, Depth d, Bound b, bool pv) :
+        move(m),
+        value(v),
+        eval(ev),
+        depth(d),
+        bound(b),
+        is_pv(pv) {};
+    // clang-format on
 };
 
 
@@ -73,7 +85,7 @@ class TranspositionTable {
 
     void resize(size_t mbSize, ThreadPool& threads);  // Set TT size
     void clear(ThreadPool& threads);                  // Re-initialize memory, multithreaded
-    int  hashfull()
+    int  hashfull(int maxAge = 0)
       const;  // Approximate what fraction of entries (permille) have been written to during this root search
 
     void

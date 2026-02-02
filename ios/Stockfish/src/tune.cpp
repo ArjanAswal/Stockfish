@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2024 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2026 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ void Tune::make_option(OptionsMap* opts, const string& n, int v, const SetRange&
     if (TuneResults.count(n))
         v = TuneResults[n];
 
-    (*opts)[n] << Option(v, r(v).first, r(v).second, on_tune);
+    opts->add(n, Option(v, r(v).first, r(v).second, on_tune));
     LastOption = &((*opts)[n]);
 
     // Print formatted parameters, ready to be copy-pasted in Fishtest

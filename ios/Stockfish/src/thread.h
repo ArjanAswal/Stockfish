@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2024 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2026 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include <mutex>
 #include <vector>
 
+#include "memory.h"
 #include "numa.h"
 #include "position.h"
 #include "search.h"
@@ -75,6 +76,8 @@ class Thread {
     Thread(Search::SharedState&,
            std::unique_ptr<Search::ISearchManager>,
            size_t,
+           size_t,
+           size_t,
            OptionalThreadToNumaNodeBinder);
     virtual ~Thread();
 
@@ -93,13 +96,13 @@ class Thread {
     void   wait_for_search_finished();
     size_t id() const { return idx; }
 
-    std::unique_ptr<Search::Worker> worker;
-    std::function<void()>           jobFunc;
+    LargePagePtr<Search::Worker> worker;
+    std::function<void()>        jobFunc;
 
    private:
     std::mutex                mutex;
     std::condition_variable   cv;
-    size_t                    idx, nthreads;
+    size_t                    idx, idxInNuma, totalNuma, nthreads;
     bool                      exit = false, searching = true;  // Set before starting std::thread
     NativeThread              stdThread;
     NumaReplicatedAccessToken numaAccessToken;
@@ -164,7 +167,7 @@ class ThreadPool {
     std::vector<std::unique_ptr<Thread>> threads;
     std::vector<NumaIndex>               boundThreadToNumaNode;
 
-    uint64_t accumulate(std::atomic<uint64_t> Search::Worker::*member) const {
+    uint64_t accumulate(std::atomic<uint64_t> Search::Worker::* member) const {
 
         uint64_t sum = 0;
         for (auto&& th : threads)

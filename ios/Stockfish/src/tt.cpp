@@ -1,6 +1,6 @@
 /*
   Stockfish, a UCI chess playing engine derived from Glaurung 2.1
-  Copyright (C) 2004-2024 The Stockfish developers (see AUTHORS file)
+  Copyright (C) 2004-2026 The Stockfish developers (see AUTHORS file)
 
   Stockfish is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -193,13 +193,13 @@ void TranspositionTable::clear(ThreadPool& threads) {
 // Returns an approximation of the hashtable
 // occupation during a search. The hash is x permill full, as per UCI protocol.
 // Only counts entries which match the current generation.
-int TranspositionTable::hashfull() const {
-
-    int cnt = 0;
+int TranspositionTable::hashfull(int maxAge) const {
+    int maxAgeInternal = maxAge << GENERATION_BITS;
+    int cnt            = 0;
     for (int i = 0; i < 1000; ++i)
         for (int j = 0; j < ClusterSize; ++j)
             cnt += table[i].entry[j].is_occupied()
-                && (table[i].entry[j].genBound8 & GENERATION_MASK) == generation8;
+                && table[i].entry[j].relative_age(generation8) <= maxAgeInternal;
 
     return cnt / ClusterSize;
 }
@@ -234,11 +234,13 @@ std::tuple<bool, TTData, TTWriter> TranspositionTable::probe(const Key key) cons
     // Find an entry to be replaced according to the replacement strategy
     TTEntry* replace = tte;
     for (int i = 1; i < ClusterSize; ++i)
-        if (replace->depth8 - replace->relative_age(generation8) * 2
-            > tte[i].depth8 - tte[i].relative_age(generation8) * 2)
+        if (replace->depth8 - replace->relative_age(generation8)
+            > tte[i].depth8 - tte[i].relative_age(generation8))
             replace = &tte[i];
 
-    return {false, TTData(), TTWriter(replace)};
+    return {false,
+            TTData{Move::none(), VALUE_NONE, VALUE_NONE, DEPTH_ENTRY_OFFSET, BOUND_NONE, false},
+            TTWriter(replace)};
 }
 
 
