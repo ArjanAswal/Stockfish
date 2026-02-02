@@ -2,7 +2,7 @@ PODS:
   - Flutter (1.0.0)
   - integration_test (0.0.1):
     - Flutter
-  - stockfish (1.7.0):
+  - stockfish (1.8.0):
     - Flutter
 
 DEPENDENCIES:
