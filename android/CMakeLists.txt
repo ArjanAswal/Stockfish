@@ -27,4 +27,4 @@ else()
 endif()
 
 file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-c288c895ea92.nnue ${CMAKE_BINARY_DIR}/nn-c288c895ea92.nnue)
-file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-c288c895ea92.nnue ${CMAKE_BINARY_DIR}/nn-c288c895ea92.nnue)
+file(DOWNLOAD https://tests.stockfishchess.org/api/nn/nn-37f18f62d772.nnue ${CMAKE_BINARY_DIR}/nn-37f18f62d772.nnue)
