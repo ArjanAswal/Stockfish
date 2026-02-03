@@ -26,7 +26,7 @@ iOS project must have `IPHONEOS_DEPLOYMENT_TARGET` >=12.0.
 Update `dependencies` section inside `pubspec.yaml`:
 
 ```yaml
-  stockfish: ^1.8.0
+  stockfish: ^1.8.1
 ```
 
 ### Init engine

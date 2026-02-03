@@ -63,3 +63,7 @@
 ## [1.8.0] - 2 February 2026
 
 * Update to Stockfish 18
+
+## [1.8.1] - 3 February 2026
+
+* Fix Stockfish 18 release
